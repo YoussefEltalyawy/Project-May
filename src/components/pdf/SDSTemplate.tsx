@@ -1,0 +1,392 @@
+"use client";
+
+import {
+  Document, Page, Text, View, StyleSheet, Image,
+} from "@react-pdf/renderer";
+import type { SDSData } from "@/lib/pubchem";
+import { getPictogramLabel } from "@/lib/ghsMapping";
+import { GHS_PICTOGRAMS_B64 } from "@/lib/ghsB64";
+
+const C = {
+  text: "#111827",
+  muted: "#4b5563",
+  line: "#e5e7eb",
+  fill: "#f3f4f6",
+  white: "#ffffff",
+  indigo: "#4f46e5",
+  indigoDark: "#3730a3",
+  indigoLight: "#eef2ff",
+  danger: "#b91c1c",
+  warn: "#b45309",
+};
+
+const S = StyleSheet.create({
+  page: {
+    fontFamily: "Helvetica",
+    fontSize: 9,
+    color: C.text,
+    backgroundColor: C.white,
+    paddingTop: 0,
+    paddingBottom: 40,
+    paddingHorizontal: 0,
+  },
+  hero: {
+    backgroundColor: C.indigo,
+    paddingVertical: 20,
+    paddingHorizontal: 44,
+    marginBottom: 0,
+  },
+  heroKicker: {
+    fontSize: 8,
+    color: "rgba(255,255,255,0.75)",
+    letterSpacing: 1.2,
+    marginBottom: 4,
+    textTransform: "uppercase",
+  },
+  heroTitle: {
+    fontSize: 17,
+    fontFamily: "Helvetica-Bold",
+    color: C.white,
+  },
+  heroMeta: {
+    fontSize: 8,
+    color: "rgba(255,255,255,0.88)",
+    marginTop: 6,
+  },
+  identityStrip: {
+    backgroundColor: C.indigoLight,
+    borderBottomWidth: 1,
+    borderBottomColor: C.line,
+    borderBottomStyle: "solid",
+    paddingVertical: 10,
+    paddingHorizontal: 44,
+  },
+  identityRow: { flexDirection: "row", flexWrap: "wrap", gap: 16 },
+  identityBlock: { minWidth: 120 },
+  identityLabel: {
+    fontSize: 7,
+    fontFamily: "Helvetica-Bold",
+    color: C.indigoDark,
+    letterSpacing: 0.6,
+    marginBottom: 2,
+  },
+  identityValue: { fontSize: 9, fontFamily: "Helvetica-Bold", color: C.text },
+  body: { paddingHorizontal: 44, paddingTop: 18 },
+  section: { marginBottom: 12 },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderLeftWidth: 3,
+    borderLeftColor: C.indigo,
+    borderLeftStyle: "solid",
+    paddingLeft: 8,
+    paddingVertical: 4,
+    marginBottom: 6,
+    backgroundColor: C.fill,
+  },
+  sectionTitle: {
+    fontSize: 10,
+    fontFamily: "Helvetica-Bold",
+    color: C.text,
+  },
+  row: { flexDirection: "row", marginBottom: 3 },
+  label: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.muted, width: 108, flexShrink: 0 },
+  value: { fontSize: 9, flex: 1, color: C.text, lineHeight: 1.35 },
+  signalRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    backgroundColor: C.indigoLight,
+    borderWidth: 0.5,
+    borderColor: C.indigo,
+    borderStyle: "solid",
+    alignSelf: "flex-start",
+    borderRadius: 4,
+  },
+  signalText: {
+    fontSize: 10,
+    fontFamily: "Helvetica-Bold",
+  },
+  pictogramRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 8 },
+  pictogramBox: { alignItems: "center", width: 58 },
+  pictogramImg: { width: 50, height: 50 },
+  pictogramLabel: { fontSize: 6.5, color: C.muted, textAlign: "center", marginTop: 2 },
+  subhead: {
+    fontSize: 8,
+    fontFamily: "Helvetica-Bold",
+    color: C.indigoDark,
+    marginBottom: 4,
+    marginTop: 6,
+  },
+  groupLabel: {
+    fontSize: 8,
+    fontFamily: "Helvetica-Bold",
+    color: C.indigo,
+    marginBottom: 3,
+    marginTop: 4,
+  },
+  bullet: { flexDirection: "row", marginBottom: 3, gap: 5 },
+  dot: { fontSize: 8, color: C.indigo, lineHeight: 1.35 },
+  bulletText: { fontSize: 9, flex: 1, lineHeight: 1.35, color: C.text },
+  propGrid: { flexDirection: "row", flexWrap: "wrap" },
+  propCell: { width: "33%", marginBottom: 6 },
+  propLabel: { fontSize: 7, fontFamily: "Helvetica-Bold", color: C.muted, marginBottom: 1 },
+  propValue: { fontSize: 9, color: C.text },
+  footer: {
+    position: "absolute",
+    bottom: 16,
+    left: 44,
+    right: 44,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    borderTopWidth: 0.5,
+    borderTopColor: C.line,
+    borderTopStyle: "solid",
+    paddingTop: 6,
+  },
+  footerText: { fontSize: 7, color: C.muted },
+  pageNum: { fontSize: 7, color: C.muted },
+});
+
+const SectionHeader = ({ num, title }: { num: string; title: string }) => (
+  <View style={S.sectionHeader}>
+    <Text style={S.sectionTitle}>{`Section ${num}: ${title}`}</Text>
+  </View>
+);
+
+const BulletItem = ({ text }: { text: string }) => (
+  <View style={S.bullet}>
+    <Text style={S.dot}>•</Text>
+    <Text style={S.bulletText}>{text}</Text>
+  </View>
+);
+
+const InfoRow = ({ label, value }: { label: string; value: string }) =>
+  value ? (
+    <View style={S.row}>
+      <Text style={S.label}>{label}</Text>
+      <Text style={S.value}>{value}</Text>
+    </View>
+  ) : null;
+
+/** Renders nothing when there is no content (no “not found” copy). */
+const TextBlock = ({ items }: { items: string[] }) => {
+  if (!items?.length) return null;
+  return (
+    <>
+      {items.map((t, i) => (
+        <BulletItem key={i} text={t} />
+      ))}
+    </>
+  );
+};
+
+export const SDSTemplate = ({ data }: { data: SDSData }) => {
+  const signalColor = data.ghs.signalWord === "Danger" ? C.danger : C.warn;
+
+  const physProps = [
+    { label: "Appearance", value: data.physical.appearance },
+    { label: "Odor", value: data.physical.odor },
+    { label: "Boiling point", value: data.physical.boilingPoint },
+    { label: "Melting point", value: data.physical.meltingPoint },
+    { label: "Flash point", value: data.physical.flashPoint },
+    { label: "Density", value: data.physical.density },
+    { label: "Vapor pressure", value: data.physical.vaporPressure },
+    { label: "Solubility", value: data.physical.solubility },
+    { label: "pH", value: data.physical.ph },
+    { label: "Auto-ignition temp.", value: data.physical.autoIgnition },
+  ].filter(p => p.value);
+
+  const prepared = new Date().toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+
+  const hasPrec =
+    (data.ghs.precautionaryGrouped?.length ?? 0) > 0 ||
+    (data.ghs.precautionaryStatements?.length ?? 0) > 0;
+
+  return (
+    <Document>
+      <Page size="A4" style={S.page}>
+        <View style={S.hero}>
+          <Text style={S.heroKicker}>Safety data sheet · summary</Text>
+          <Text style={S.heroTitle}>{data.identity.name}</Text>
+          <Text style={S.heroMeta}>
+            {prepared}
+            {data.identity.cas ? ` · CAS ${data.identity.cas}` : ""}
+            {` · Ref. CID ${data.cid}`}
+          </Text>
+        </View>
+
+        <View style={S.identityStrip}>
+          <View style={S.identityRow}>
+            <View style={S.identityBlock}>
+              <Text style={S.identityLabel}>Signal</Text>
+              <Text style={S.identityValue}>{data.ghs.signalWord}</Text>
+            </View>
+            {data.identity.formula ? (
+              <View style={S.identityBlock}>
+                <Text style={S.identityLabel}>Formula</Text>
+                <Text style={S.identityValue}>{data.identity.formula}</Text>
+              </View>
+            ) : null}
+            {data.identity.molecularWeight ? (
+              <View style={S.identityBlock}>
+                <Text style={S.identityLabel}>Mol. weight</Text>
+                <Text style={S.identityValue}>{data.identity.molecularWeight}</Text>
+              </View>
+            ) : null}
+          </View>
+        </View>
+
+        <View style={S.body}>
+          <View style={S.section}>
+            <SectionHeader num="1" title="Identification" />
+            <InfoRow label="Product name" value={data.identity.name} />
+            <InfoRow label="IUPAC name" value={data.identity.iupacName} />
+            <InfoRow label="CAS no." value={data.identity.cas} />
+            <InfoRow label="Formula" value={data.identity.formula} />
+            <InfoRow label="Molecular weight" value={data.identity.molecularWeight} />
+            <InfoRow label="InChIKey" value={data.identity.inchiKey} />
+            {data.identity.synonyms.length > 0 ? (
+              <InfoRow label="Synonyms" value={data.identity.synonyms.join("; ")} />
+            ) : null}
+          </View>
+
+          <View style={S.section}>
+            <SectionHeader num="2" title="Hazard identification" />
+            <View style={S.signalRow}>
+              <Text style={[S.signalText, { color: signalColor }]}>
+                Signal word: {data.ghs.signalWord}
+              </Text>
+            </View>
+
+            {data.ghs.pictograms.length > 0 ? (
+              <View style={S.pictogramRow}>
+                {data.ghs.pictograms.map((code) => {
+                  const src = GHS_PICTOGRAMS_B64[code];
+                  if (!src) return null;
+                  return (
+                    <View key={code} style={S.pictogramBox}>
+                      {/* eslint-disable-next-line jsx-a11y/alt-text -- react-pdf Image */}
+                      <Image src={src} style={S.pictogramImg} />
+                      <Text style={S.pictogramLabel}>{getPictogramLabel(code)}</Text>
+                    </View>
+                  );
+                })}
+              </View>
+            ) : null}
+
+            <Text style={S.subhead}>Hazard statements</Text>
+            <TextBlock items={data.ghs.hazardStatements} />
+
+            {hasPrec ? <Text style={S.subhead}>Precautionary statements</Text> : null}
+            {data.ghs.precautionaryGrouped?.length ? (
+              data.ghs.precautionaryGrouped.map(g => (
+                <View key={g.heading} style={{ marginBottom: 4 }}>
+                  <Text style={S.groupLabel}>{g.heading}</Text>
+                  {g.items.map((line, i) => (
+                    <BulletItem key={`${g.heading}-${i}`} text={line} />
+                  ))}
+                </View>
+              ))
+            ) : (
+              <TextBlock items={data.ghs.precautionaryStatements} />
+            )}
+          </View>
+
+          <View style={S.section}>
+            <SectionHeader num="3" title="Composition / ingredients" />
+            <TextBlock items={data.composition?.text ?? []} />
+          </View>
+
+          <View style={S.section}>
+            <SectionHeader num="4" title="First-aid measures" />
+            <TextBlock items={data.firstAid.text} />
+          </View>
+
+          <View style={S.section}>
+            <SectionHeader num="5" title="Fire-fighting measures" />
+            <TextBlock items={data.fireFighting.text} />
+          </View>
+
+          <View style={S.section}>
+            <SectionHeader num="6" title="Accidental release measures" />
+            <TextBlock items={data.accidentalRelease?.text ?? []} />
+          </View>
+
+          <View style={S.section}>
+            <SectionHeader num="7" title="Handling and storage" />
+            <TextBlock items={[...(data.handling.text || []), ...(data.storage.text || [])]} />
+          </View>
+
+          <View style={S.section}>
+            <SectionHeader num="8" title="Exposure controls / PPE" />
+            <TextBlock items={data.exposure.text} />
+          </View>
+
+          <View style={S.section}>
+            <SectionHeader num="9" title="Physical and chemical properties" />
+            {physProps.length > 0 ? (
+              <View style={S.propGrid}>
+                {physProps.map(({ label, value }) => (
+                  <View key={label} style={S.propCell}>
+                    <Text style={S.propLabel}>{label}</Text>
+                    <Text style={S.propValue}>{value}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+          </View>
+
+          <View style={S.section}>
+            <SectionHeader num="10" title="Stability and reactivity" />
+            <TextBlock items={data.stability.text} />
+          </View>
+
+          <View style={S.section}>
+            <SectionHeader num="11" title="Toxicological information" />
+            <TextBlock items={data.toxicology.text} />
+          </View>
+
+          <View style={S.section}>
+            <SectionHeader num="12" title="Ecological information" />
+            <TextBlock items={data.ecological?.text ?? []} />
+          </View>
+
+          <View style={S.section}>
+            <SectionHeader num="13" title="Disposal considerations" />
+            <TextBlock items={data.disposal.text} />
+          </View>
+
+          <View style={S.section}>
+            <SectionHeader num="14" title="Transport information" />
+            <TextBlock items={data.transport?.text ?? []} />
+          </View>
+
+          <View style={S.section}>
+            <SectionHeader num="15" title="Regulatory information" />
+            <TextBlock items={data.regulatory?.text ?? []} />
+          </View>
+
+          <View style={S.section}>
+            <SectionHeader num="16" title="Other information" />
+            <TextBlock items={data.otherInfo?.text ?? []} />
+          </View>
+        </View>
+
+        <View style={S.footer} fixed>
+          <Text style={S.footerText}>Summary for reference · confirm details with your supplier SDS</Text>
+          <Text
+            style={S.pageNum}
+            render={({ pageNumber, totalPages }) => `Page ${pageNumber} / ${totalPages}`}
+          />
+        </View>
+      </Page>
+    </Document>
+  );
+};
