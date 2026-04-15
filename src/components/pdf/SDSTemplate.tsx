@@ -296,7 +296,21 @@ export const SDSTemplate = ({ data }: { data: SDSData }) => {
           </View>
 
           <View style={S.section}>
-            <SectionHeader num="2" title="Hazard identification" />
+            <SectionHeader num="2" title="Physical & Chemical Properties" />
+            {physProps.length > 0 ? (
+              <View style={S.propGrid}>
+                {physProps.map(({ label, value }) => (
+                  <View key={label} style={S.propCell}>
+                    <Text style={S.propLabel}>{label}</Text>
+                    <Text style={S.propValue}>{value}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+          </View>
+
+          <View style={S.section}>
+            <SectionHeader num="3" title="Hazards Identification" />
             <View style={S.signalRow}>
               <Text style={[S.signalText, { color: signalColor }]}>
                 Signal word: {data.ghs.signalWord}
@@ -338,82 +352,38 @@ export const SDSTemplate = ({ data }: { data: SDSData }) => {
           </View>
 
           <View style={S.section}>
-            <SectionHeader num="3" title="Composition / ingredients" />
-            <TextBlock items={data.composition?.text ?? []} />
-          </View>
-
-          <View style={S.section}>
-            <SectionHeader num="4" title="First-aid measures" />
+            <SectionHeader num="4" title="First Aid Measure" />
             <TextBlock items={data.firstAid.text} />
           </View>
 
           <View style={S.section}>
-            <SectionHeader num="5" title="Fire-fighting measures" />
+            <SectionHeader num="5" title="Firefight Measure" />
             <TextBlock items={data.fireFighting.text} />
           </View>
 
           <View style={S.section}>
-            <SectionHeader num="6" title="Accidental release measures" />
-            <TextBlock items={data.accidentalRelease?.text ?? []} />
-          </View>
-
-          <View style={S.section}>
-            <SectionHeader num="7" title="Handling and storage" />
+            <SectionHeader num="6" title="Handling and Storage" />
             <TextBlock items={[...(data.handling.text || []), ...(data.storage.text || [])]} />
           </View>
 
           <View style={S.section}>
-            <SectionHeader num="8" title="Exposure controls / PPE" />
+            <SectionHeader num="7" title="Exposure Controls / Personal Protection" />
             <TextBlock items={data.exposure.text} />
           </View>
 
           <View style={S.section}>
-            <SectionHeader num="9" title="Physical and chemical properties" />
-            {physProps.length > 0 ? (
-              <View style={S.propGrid}>
-                {physProps.map(({ label, value }) => (
-                  <View key={label} style={S.propCell}>
-                    <Text style={S.propLabel}>{label}</Text>
-                    <Text style={S.propValue}>{value}</Text>
-                  </View>
-                ))}
-              </View>
-            ) : null}
-          </View>
-
-          <View style={S.section}>
-            <SectionHeader num="10" title="Stability and reactivity" />
-            <TextBlock items={data.stability.text} />
-          </View>
-
-          <View style={S.section}>
-            <SectionHeader num="11" title="Toxicological information" />
-            <TextBlock items={data.toxicology.text} />
-          </View>
-
-          <View style={S.section}>
-            <SectionHeader num="12" title="Ecological information" />
+            <SectionHeader num="8" title="Ecological Information" />
             <TextBlock items={data.ecological?.text ?? []} />
           </View>
 
           <View style={S.section}>
-            <SectionHeader num="13" title="Disposal considerations" />
+            <SectionHeader num="9" title="Disposal Considerations" />
             <TextBlock items={data.disposal.text} />
           </View>
 
           <View style={S.section}>
-            <SectionHeader num="14" title="Transport information" />
-            <TextBlock items={data.transport?.text ?? []} />
-          </View>
-
-          <View style={S.section}>
-            <SectionHeader num="15" title="Regulatory information" />
-            <TextBlock items={data.regulatory?.text ?? []} />
-          </View>
-
-          <View style={S.section}>
-            <SectionHeader num="16" title="Other information" />
-            <TextBlock items={data.otherInfo?.text ?? []} />
+            <SectionHeader num="10" title="Toxicological Info" />
+            <TextBlock items={data.toxicology.text} />
           </View>
         </View>
 

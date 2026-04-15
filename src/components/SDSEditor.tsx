@@ -1,20 +1,14 @@
 import { SDSData } from "@/lib/pubchem";
 
 const SECTIONS: Array<{ key: keyof Omit<SDSData, "cid" | "identity" | "ghs" | "physical">; label: string; num: string }> = [
-  { num: "3", key: "composition", label: "Composition / ingredients" },
-  { num: "4", key: "firstAid", label: "First-aid measures" },
-  { num: "5", key: "fireFighting", label: "Fire-fighting measures" },
-  { num: "6", key: "accidentalRelease", label: "Accidental release measures" },
-  { num: "7", key: "handling", label: "Handling" },
-  { num: "7", key: "storage", label: "Storage" },
-  { num: "8", key: "exposure", label: "Exposure controls / PPE" },
-  { num: "10", key: "stability", label: "Stability and reactivity" },
-  { num: "11", key: "toxicology", label: "Toxicological information" },
-  { num: "12", key: "ecological", label: "Ecological information" },
-  { num: "13", key: "disposal", label: "Disposal considerations" },
-  { num: "14", key: "transport", label: "Transport information" },
-  { num: "15", key: "regulatory", label: "Regulatory information" },
-  { num: "16", key: "otherInfo", label: "Other information" },
+  { num: "4", key: "firstAid", label: "First Aid Measure" },
+  { num: "5", key: "fireFighting", label: "Firefight Measure" },
+  { num: "6", key: "handling", label: "Handling" },
+  { num: "6", key: "storage", label: "Storage" },
+  { num: "7", key: "exposure", label: "Exposure Controls / Personal Protection" },
+  { num: "8", key: "ecological", label: "Ecological Information" },
+  { num: "9", key: "disposal", label: "Disposal Considerations" },
+  { num: "10", key: "toxicology", label: "Toxicological Info" },
 ];
 
 interface SDSEditorProps {
