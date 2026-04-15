@@ -6,6 +6,42 @@ import {
 import type { SDSData } from "@/lib/pubchem";
 import { getPictogramLabel } from "@/lib/ghsMapping";
 import { GHS_PICTOGRAMS_B64 } from "@/lib/ghsB64";
+import { reorderFormula } from "@/lib/formulaUtils";
+import React from "react";
+
+const ChemicalFormulaPdf = ({ formula, style }: { formula: string; style?: { fontSize?: number; fontFamily?: string; color?: string } }) => {
+  if (!formula) return null;
+
+  // Reorder from Hill notation to conventional notation
+  const reordered = reorderFormula(formula);
+
+  const items = [];
+  const regex = /([a-zA-Z\]\)])(\d+)/g;
+  let lastIndex = 0;
+  let match;
+  while ((match = regex.exec(reordered)) !== null) {
+    const precedingText = reordered.slice(lastIndex, match.index + match[1].length);
+    if (precedingText) items.push({ text: precedingText, sub: false });
+    items.push({ text: match[2], sub: true });
+    lastIndex = regex.lastIndex;
+  }
+  const remainingText = reordered.slice(lastIndex);
+  if (remainingText) items.push({ text: remainingText, sub: false });
+
+  const subStyle = { fontSize: (style?.fontSize || 9) * 0.65, color: style?.color };
+
+  return (
+    <Text style={style}>
+      {items.map((item, i) =>
+        item.sub ? (
+          <Text key={i} style={subStyle}>{item.text}</Text>
+        ) : (
+          item.text
+        )
+      )}
+    </Text>
+  );
+};
 
 const C = {
   text: "#111827",
@@ -163,11 +199,15 @@ const BulletItem = ({ text }: { text: string }) => (
   </View>
 );
 
-const InfoRow = ({ label, value }: { label: string; value: string }) =>
+const InfoRow = ({ label, value }: { label: string; value: React.ReactNode }) =>
   value ? (
     <View style={S.row}>
       <Text style={S.label}>{label}</Text>
-      <Text style={S.value}>{value}</Text>
+      {typeof value === "string" || typeof value === "number" ? (
+        <Text style={S.value}>{value}</Text>
+      ) : (
+        <View style={S.value}>{value}</View>
+      )}
     </View>
   ) : null;
 
@@ -231,7 +271,7 @@ export const SDSTemplate = ({ data }: { data: SDSData }) => {
             {data.identity.formula ? (
               <View style={S.identityBlock}>
                 <Text style={S.identityLabel}>Formula</Text>
-                <Text style={S.identityValue}>{data.identity.formula}</Text>
+                <ChemicalFormulaPdf formula={data.identity.formula} style={S.identityValue} />
               </View>
             ) : null}
             {data.identity.molecularWeight ? (
@@ -248,10 +288,8 @@ export const SDSTemplate = ({ data }: { data: SDSData }) => {
             <SectionHeader num="1" title="Identification" />
             <InfoRow label="Product name" value={data.identity.name} />
             <InfoRow label="IUPAC name" value={data.identity.iupacName} />
-            <InfoRow label="CAS no." value={data.identity.cas} />
-            <InfoRow label="Formula" value={data.identity.formula} />
+            <InfoRow label="Formula" value={<ChemicalFormulaPdf formula={data.identity.formula} style={S.value} />} />
             <InfoRow label="Molecular weight" value={data.identity.molecularWeight} />
-            <InfoRow label="InChIKey" value={data.identity.inchiKey} />
             {data.identity.synonyms.length > 0 ? (
               <InfoRow label="Synonyms" value={data.identity.synonyms.join("; ")} />
             ) : null}
