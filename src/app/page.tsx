@@ -21,12 +21,56 @@ export default function Home() {
         setError(`No compound found for "${term}". Try another spelling or pick a suggestion.`);
         return;
       }
-      const result = await fetchFullSDSByCid(cid, term);
-      if (result) {
-        setData(result);
-      } else {
-        setError(`Could not load safety data for "${term}".`);
+
+      // 1. Check local storage cache
+      const cacheKey = `sds_cache_${cid}`;
+      try {
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          setData(JSON.parse(cached));
+          setIsLoading(false);
+          return;
+        }
+      } catch (err) {
+        console.warn("Failed to read from localStorage:", err);
       }
+
+      // 2. Fetch raw data from PubChem
+      const rawResult = await fetchFullSDSByCid(cid, term);
+      if (!rawResult) {
+        setError(`Could not load safety data for "${term}".`);
+        return;
+      }
+
+      // 3. Summarize using Gemini API Route
+      try {
+        const summarizeRes = await fetch("/api/summarize-sds", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(rawResult),
+        });
+
+        if (summarizeRes.ok) {
+          const summarizedResult = await summarizeRes.json();
+          setData(summarizedResult);
+          
+          // 4. Save summarized result to cache
+          try {
+            localStorage.setItem(cacheKey, JSON.stringify(summarizedResult));
+          } catch (cacheSetErr) {
+            console.warn("Could not write to localStorage (possibly quota exceeded):", cacheSetErr);
+          }
+        } else {
+          const errorPayload = await summarizeRes.text();
+          console.error("Gemini summarize API failed. Status:", summarizeRes.status, "Details:", errorPayload);
+          console.error("Falling back to raw data...");
+          setData(rawResult);
+        }
+      } catch (apiError) {
+        console.error("Network error calling Gemini summarize API, falling back to raw data.", apiError);
+        setData(rawResult);
+      }
+
     } catch {
       setError("A network error occurred. Please check your connection and try again.");
     } finally {
