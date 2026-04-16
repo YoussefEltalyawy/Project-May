@@ -1,13 +1,10 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 import { SDSData } from '@/lib/pubchem';
+import Groq from 'groq-sdk';
 
 export async function POST(request: Request) {
   try {
-    const ai = new GoogleGenAI({
-      apiKey: process.env.GEMINI_API_KEY,
-    });
-
     const data: SDSData = await request.json();
 
     const sectionsToSummarize = {
@@ -68,18 +65,28 @@ ${JSON.stringify(sectionsToSummarize, null, 2)}
       ],
     };
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-      config: {
-        systemInstruction: "You strictly output JSON formatting an SDS.",
-        responseMimeType: "application/json",
-        responseSchema: responseSchema as any,
-        temperature: 0.1, // very low for factual reduction
-      }
-    });
+    // Try AI providers in order: Gemini → Groq → OpenRouter → Raw Data
+    let outputJson: any = null;
 
-    const outputJson = JSON.parse(response.text || '{}');
+    // 1. Try Gemini first
+    if (!outputJson && process.env.GEMINI_API_KEY) {
+      outputJson = await tryGemini(prompt, responseSchema);
+    }
+
+    // 2. Fallback to Groq (FREE TIER)
+    if (!outputJson && process.env.GROQ_API_KEY) {
+      outputJson = await tryGroq(prompt);
+    }
+
+    // 3. Fallback to OpenRouter (FREE MODELS)
+    if (!outputJson && process.env.OPENROUTER_API_KEY) {
+      outputJson = await tryOpenRouter(prompt);
+    }
+
+    if (!outputJson) {
+      console.warn("All AI providers failed, returning raw data");
+      return NextResponse.json(data);
+    }
 
     // Merge the AI summarized text arrays back into the data object
     const summarizedData: SDSData = {
@@ -103,13 +110,155 @@ ${JSON.stringify(sectionsToSummarize, null, 2)}
 
     return NextResponse.json(summarizedData);
   } catch (error: any) {
-    console.error("Gemini AI API Error:", error);
+    console.error("AI Summarization Error:", error);
     return NextResponse.json(
       { 
-        error: "Failed to summarize SDS using Gemini AI. Verify your API Key.",
+        error: "Failed to summarize SDS using AI providers. Verify your API Keys.",
         details: error?.message || String(error)
       },
       { status: 500 }
     );
+  }
+}
+
+// ==================== PROVIDER HELPER FUNCTIONS ====================
+
+async function tryGemini(prompt: string, responseSchema: any): Promise<any> {
+  try {
+    const ai = new GoogleGenAI({
+      apiKey: process.env.GEMINI_API_KEY,
+    });
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-pro',
+      contents: prompt,
+      config: {
+        systemInstruction: "You strictly output JSON formatting an SDS.",
+        responseMimeType: "application/json",
+        responseSchema: responseSchema,
+        temperature: 0.1,
+      }
+    });
+
+    return JSON.parse(response.text || '{}');
+  } catch (error: any) {
+    console.warn("Gemini failed:", error?.message);
+    return null;
+  }
+}
+
+async function tryGroq(prompt: string): Promise<any> {
+  try {
+    const groq = new Groq({
+      apiKey: process.env.GROQ_API_KEY,
+    });
+
+    // Free models on Groq (in order of preference)
+    const freeModels = [
+      'llama-3.3-70b-versatile',  // Best free model
+      'gpt-oss-120b',             // OpenAI OSS model
+      'llama-3.1-8b-instant',     // Fast fallback
+      'gpt-oss-20b',              // Smaller OSS model
+    ];
+
+    for (const model of freeModels) {
+      try {
+        const completion = await groq.chat.completions.create({
+          model,
+          messages: [
+            {
+              role: 'system',
+              content: 'You are an expert Safety Data Sheet (SDS) compiler. You MUST respond with valid JSON only, no markdown, no explanation.',
+            },
+            {
+              role: 'user',
+              content: prompt + '\n\nIMPORTANT: Respond with ONLY a valid JSON object. No markdown code blocks, no extra text.',
+            },
+          ],
+          temperature: 0.1,
+          max_tokens: 4096,
+          response_format: { type: 'json_object' },
+        });
+
+        const content = completion.choices[0]?.message?.content;
+        if (content) {
+          const parsed = JSON.parse(content);
+          console.log(`Groq model ${model} succeeded`);
+          return parsed;
+        }
+      } catch (modelError: any) {
+        console.warn(`Groq model ${model} failed:`, modelError?.message);
+        continue;
+      }
+    }
+
+    return null;
+  } catch (error: any) {
+    console.warn("Groq failed:", error?.message);
+    return null;
+  }
+}
+
+async function tryOpenRouter(prompt: string): Promise<any> {
+  try {
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    const siteUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
+
+    // Free models on OpenRouter (in order of preference)
+    const freeModels = [
+      'meta-llama/llama-3.3-70b-instruct:free',  // Meta's Llama 3.3 70B
+      'openai/gpt-oss-120b:free',                // OpenAI OSS 120B
+      'openrouter/elephant-alpha:free',          // Elephant Alpha 100B
+      'z-ai/glm-4.5-air:free',                   // GLM 4.5 Air
+    ];
+
+    for (const model of freeModels) {
+      try {
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': siteUrl,
+            'X-OpenRouter-Title': 'SDS Summarizer',
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              {
+                role: 'system',
+                content: 'You are an expert Safety Data Sheet (SDS) compiler. You MUST respond with valid JSON only, no markdown, no explanation.',
+              },
+              {
+                role: 'user',
+                content: prompt + '\n\nIMPORTANT: Respond with ONLY a valid JSON object. No markdown code blocks, no extra text.',
+              },
+            ],
+            temperature: 0.1,
+            max_tokens: 4096,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+        }
+
+        const completion = await response.json();
+        const content = completion.choices?.[0]?.message?.content;
+        if (content) {
+          const parsed = JSON.parse(content);
+          console.log(`OpenRouter model ${model} succeeded`);
+          return parsed;
+        }
+      } catch (modelError: any) {
+        console.warn(`OpenRouter model ${model} failed:`, modelError?.message);
+        continue;
+      }
+    }
+
+    return null;
+  } catch (error: any) {
+    console.warn("OpenRouter failed:", error?.message);
+    return null;
   }
 }

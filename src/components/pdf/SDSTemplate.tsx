@@ -329,27 +329,27 @@ export const SDSTemplate = ({ data }: { data: SDSData }) => {
               </View>
             ) : null}
 
-            <TextBlock items={data.hazards.text} />
+            <TextBlock items={data.hazards?.text ?? []} />
           </View>
 
           <View style={S.section}>
             <SectionHeader num="4" title="First Aid Measure" />
-            <TextBlock items={data.firstAid.text} />
+            <TextBlock items={data.firstAid?.text ?? []} />
           </View>
 
           <View style={S.section}>
             <SectionHeader num="5" title="Firefight Measure" />
-            <TextBlock items={data.fireFighting.text} />
+            <TextBlock items={data.fireFighting?.text ?? []} />
           </View>
 
           <View style={S.section}>
             <SectionHeader num="6" title="Handling and Storage" />
-            <TextBlock items={[...(data.handling.text || []), ...(data.storage.text || [])]} />
+            <TextBlock items={[...(data.handling?.text ?? []), ...(data.storage?.text ?? [])]} />
           </View>
 
           <View style={S.section}>
             <SectionHeader num="7" title="Exposure Controls / Personal Protection" />
-            <TextBlock items={data.exposure.text} />
+            <TextBlock items={data.exposure?.text ?? []} />
           </View>
 
           <View style={S.section}>
@@ -359,12 +359,12 @@ export const SDSTemplate = ({ data }: { data: SDSData }) => {
 
           <View style={S.section}>
             <SectionHeader num="9" title="Disposal Considerations" />
-            <TextBlock items={data.disposal.text} />
+            <TextBlock items={data.disposal?.text ?? []} />
           </View>
 
           <View style={S.section}>
             <SectionHeader num="10" title="Toxicological Info" />
-            <TextBlock items={data.toxicology.text} />
+            <TextBlock items={data.toxicology?.text ?? []} />
           </View>
         </View>
 
