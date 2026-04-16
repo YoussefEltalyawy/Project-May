@@ -1,6 +1,7 @@
 import { SDSData } from "@/lib/pubchem";
 
 const SECTIONS: Array<{ key: keyof Omit<SDSData, "cid" | "identity" | "ghs" | "physical">; label: string; num: string }> = [
+  { num: "3", key: "hazards", label: "Hazards Identification" },
   { num: "4", key: "firstAid", label: "First Aid Measure" },
   { num: "5", key: "fireFighting", label: "Firefight Measure" },
   { num: "6", key: "handling", label: "Handling" },

@@ -11,6 +11,7 @@ export async function POST(request: Request) {
     const data: SDSData = await request.json();
 
     const sectionsToSummarize = {
+      hazards: data.hazards?.text || [],
       composition: data.composition?.text || [],
       firstAid: data.firstAid?.text || [],
       fireFighting: data.fireFighting?.text || [],
@@ -43,6 +44,7 @@ ${JSON.stringify(sectionsToSummarize, null, 2)}
     const responseSchema = {
       type: "object",
       properties: {
+        hazards: { type: "array", items: { type: "string" } },
         composition: { type: "array", items: { type: "string" } },
         firstAid: { type: "array", items: { type: "string" } },
         fireFighting: { type: "array", items: { type: "string" } },
@@ -59,7 +61,7 @@ ${JSON.stringify(sectionsToSummarize, null, 2)}
         otherInfo: { type: "array", items: { type: "string" } },
       },
       required: [
-        "composition", "firstAid", "fireFighting", "accidentalRelease", 
+        "hazards", "composition", "firstAid", "fireFighting", "accidentalRelease", 
         "handling", "storage", "exposure", "stability", 
         "toxicology", "ecological", "disposal", "transport", 
         "regulatory", "otherInfo"
@@ -82,6 +84,7 @@ ${JSON.stringify(sectionsToSummarize, null, 2)}
     // Merge the AI summarized text arrays back into the data object
     const summarizedData: SDSData = {
       ...data,
+      hazards: { text: outputJson.hazards || [] },
       composition: { text: outputJson.composition || [] },
       firstAid: { text: outputJson.firstAid || [] },
       fireFighting: { text: outputJson.fireFighting || [] },

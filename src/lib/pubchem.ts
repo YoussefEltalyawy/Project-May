@@ -47,6 +47,7 @@ export interface SDSData {
   identity: ChemicalIdentity;
   ghs: GHSData;
   physical: PhysicalProperties;
+  hazards: { text: string[] };
   composition: { text: string[] };
   firstAid: { text: string[] };
   fireFighting: { text: string[] };
@@ -422,6 +423,11 @@ export async function fetchFullSDSByCid(cid: string, fallbackName?: string): Pro
   const ghs = finalizeGhs(views, parseGHSFromRoots(views));
   const physical = getPhysicalPropertiesFromViews(views);
 
+  const hazards = getSectionTextsFromViews(
+    views, 6, 100,
+    "Hazards Identification", "GHS Classification", "Hazard Statements", "Hazards",
+    "Hazard Identification", "Classification of the Substance or Mixture"
+  );
   const composition = getSectionTextsFromViews(
     views, 6, 60,
     "Composition/Information on Ingredients", "Composition", "Ingredients", "Components"
@@ -497,6 +503,7 @@ export async function fetchFullSDSByCid(cid: string, fallbackName?: string): Pro
     identity,
     ghs,
     physical,
+    hazards,
     composition,
     firstAid,
     fireFighting,

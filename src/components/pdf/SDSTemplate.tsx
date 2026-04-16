@@ -245,10 +245,6 @@ export const SDSTemplate = ({ data }: { data: SDSData }) => {
     year: "numeric",
   });
 
-  const hasPrec =
-    (data.ghs.precautionaryGrouped?.length ?? 0) > 0 ||
-    (data.ghs.precautionaryStatements?.length ?? 0) > 0;
-
   return (
     <Document>
       <Page size="A4" style={S.page}>
@@ -333,22 +329,7 @@ export const SDSTemplate = ({ data }: { data: SDSData }) => {
               </View>
             ) : null}
 
-            <Text style={S.subhead}>Hazard statements</Text>
-            <TextBlock items={data.ghs.hazardStatements} />
-
-            {hasPrec ? <Text style={S.subhead}>Precautionary statements</Text> : null}
-            {data.ghs.precautionaryGrouped?.length ? (
-              data.ghs.precautionaryGrouped.map(g => (
-                <View key={g.heading} style={{ marginBottom: 4 }}>
-                  <Text style={S.groupLabel}>{g.heading}</Text>
-                  {g.items.map((line, i) => (
-                    <BulletItem key={`${g.heading}-${i}`} text={line} />
-                  ))}
-                </View>
-              ))
-            ) : (
-              <TextBlock items={data.ghs.precautionaryStatements} />
-            )}
+            <TextBlock items={data.hazards.text} />
           </View>
 
           <View style={S.section}>
