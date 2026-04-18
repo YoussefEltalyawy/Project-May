@@ -12,6 +12,8 @@ const TEXT_SECTIONS: Array<{ key: keyof Omit<SDSData, "cid" | "identity" | "ghs"
   { num: "10", key: "toxicology", label: "Toxicological Info" },
 ];
 
+const ARABIC_SECTION = { key: "arabicWarning", label: "Arabic Safety Warning" };
+
 const PHYSICAL_PROPS: Array<{ key: keyof PhysicalProperties; label: string }> = [
   { key: "appearance", label: "Appearance" },
   { key: "odor", label: "Odor" },
@@ -105,6 +107,25 @@ export const SDSEditor = ({ data, onChange }: SDSEditorProps) => {
           </div>
         );
       })}
+
+      {/* Arabic Warning Section */}
+      <div className="space-y-2 pb-6">
+        <label
+          htmlFor="editor-arabic"
+          className="block text-sm font-semibold text-red-700 bg-red-50 px-3 py-1.5 rounded-md border-l-2 border-red-600"
+        >
+          {ARABIC_SECTION.label} (RTL)
+        </label>
+        <textarea
+          id="editor-arabic"
+          value={data.arabicWarning || ""}
+          onChange={(e) => onChange({ ...data, arabicWarning: e.target.value })}
+          dir="rtl"
+          placeholder="تحذير السلامة بالعربية..."
+          className="w-full min-h-[80px] p-4 text-lg border border-red-200 rounded-lg shadow-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-red-50/30 resize-y font-arabic"
+          style={{ fontFamily: "Cairo, sans-serif" }}
+        />
+      </div>
     </div>
   );
 };

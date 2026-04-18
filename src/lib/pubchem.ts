@@ -62,6 +62,7 @@ export interface SDSData {
   transport: { text: string[] };
   regulatory: { text: string[] };
   otherInfo: { text: string[] };
+  arabicWarning?: string;
 }
 
 // ─── API constants ────────────────────────────────────────────────────────────

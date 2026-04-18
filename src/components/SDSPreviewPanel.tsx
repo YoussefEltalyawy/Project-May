@@ -84,7 +84,7 @@ export const SDSPreviewPanel = ({ data }: { data: SDSData }) => {
             </a>
           </div>
         </div>
-        <PDFExportButton data={debouncedData} />
+        <PDFExportButton key={`export-${debouncedData.cid}-v5`} data={debouncedData} />
       </div>
 
       <div className="flex flex-col gap-6 w-full">
@@ -93,6 +93,7 @@ export const SDSPreviewPanel = ({ data }: { data: SDSData }) => {
                      h-[85vh] min-h-[40rem]"
         >
           <PDFViewer
+            key={`viewer-${debouncedData.cid}-v5`}
             width="100%"
             height="100%"
             showToolbar

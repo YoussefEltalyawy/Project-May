@@ -22,8 +22,8 @@ export default function Home() {
         return;
       }
 
-      // 1. Check local storage cache
-      const cacheKey = `sds_cache_${cid}`;
+      // 1. Check local storage cache (v3 includes Arabic RTL fixes)
+      const cacheKey = `sds_cache_v3_${cid}`;
       try {
         const cached = localStorage.getItem(cacheKey);
         if (cached) {

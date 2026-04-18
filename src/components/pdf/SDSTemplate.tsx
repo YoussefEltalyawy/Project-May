@@ -8,6 +8,13 @@ import { getPictogramLabel } from "@/lib/ghsMapping";
 import { GHS_PICTOGRAMS_B64 } from "@/lib/ghsB64";
 import { reorderFormula } from "@/lib/formulaUtils";
 import React from "react";
+import { Font } from "@react-pdf/renderer";
+
+// Register Cairo font for Arabic support (local file)
+Font.register({
+  family: "Cairo",
+  src: "/fonts/Cairo-VariableFont_slnt,wght.ttf",
+});
 
 const ChemicalFormulaPdf = ({ formula, style }: { formula: string; style?: { fontSize?: number; fontFamily?: string; color?: string } }) => {
   if (!formula) return null;
@@ -184,6 +191,31 @@ const S = StyleSheet.create({
   },
   footerText: { fontSize: 7, color: C.muted },
   pageNum: { fontSize: 7, color: C.muted },
+  arabicWarningBox: {
+    marginTop: 20,
+    padding: 12,
+    backgroundColor: "#fff1f2",
+    borderWidth: 1,
+    borderColor: "#fecdd3",
+    borderStyle: "solid",
+    borderRadius: 6,
+  },
+  arabicWarningTitle: {
+    fontFamily: "Cairo",
+    fontSize: 14,
+    color: "#9f1239",
+    textAlign: "right",
+    direction: "rtl",
+    marginBottom: 4,
+  },
+  arabicWarningText: {
+    fontFamily: "Cairo",
+    fontSize: 12,
+    color: "#4c0519",
+    textAlign: "right",
+    direction: "rtl",
+    lineHeight: 1.4,
+  },
 });
 
 const SectionHeader = ({ num, title }: { num: string; title: string }) => (
@@ -366,6 +398,13 @@ export const SDSTemplate = ({ data }: { data: SDSData }) => {
             <SectionHeader num="10" title="Toxicological Info" />
             <TextBlock items={data.toxicology?.text ?? []} />
           </View>
+
+          {data.arabicWarning ? (
+            <View style={S.arabicWarningBox}>
+              <Text style={S.arabicWarningTitle}>تحذير سلامة (Safety Warning)</Text>
+              <Text style={S.arabicWarningText}>{data.arabicWarning}</Text>
+            </View>
+          ) : null}
         </View>
 
         <View style={S.footer} fixed>

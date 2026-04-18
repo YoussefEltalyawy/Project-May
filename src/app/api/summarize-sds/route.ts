@@ -287,6 +287,25 @@ export async function POST(request: Request) {
           regulatory: { type: "array", items: { type: "string" } },
           otherInfo: { type: "array", items: { type: "string" } },
         }
+      },
+      {
+        id: "Arabic Safety Warning",
+        input: { hazards: sectionsRaw.hazards.slice(0, 5), firstAid: sectionsRaw.firstAid.slice(0, 3) },
+        schema: {
+          arabicWarning: { type: "string" },
+        },
+        customPrompt: `You are an expert safety officer. Create a VERY SHORT, URGENT safety warning in ARABIC for laboratory workers. 
+Chemical: "${chemicalName}"
+Hazards Context: ${JSON.stringify(sectionsRaw.hazards.slice(0, 5))}
+First Aid Context: ${JSON.stringify(sectionsRaw.firstAid.slice(0, 3))}
+
+RULES:
+1. Identify the most critical danger (Toxic/Flammable/Corrosive).
+2. Write in professional Modern Standard Arabic (MSA).
+3. Use phrases like "خطر شديد" (Extreme Danger), "سريع الاشتعال" (Highly Flammable), "سام" (Toxic).
+4. Include 1 lifesaving step (e.g., "استخدم واقي التنفس", "اغسل بالماء فوراً").
+5. Return ONLY a JSON object with the key "arabicWarning".
+6. Keep it under 25 words. DO NOT say "check english instructions".`
       }
     ];
 
@@ -299,7 +318,7 @@ export async function POST(request: Request) {
         }
       }
 
-      const prompt = `You are an expert Safety Data Sheet (SDS) compiler working on a chemical named "${chemicalName}".
+      const prompt = (chunk as any).customPrompt || `You are an expert Safety Data Sheet (SDS) compiler working on a chemical named "${chemicalName}".
 Summarize these specific SDS sections. Follow these rules:
 - Clean, deduplicate, and summarize into 1-5 professional bullet points per section.
 - NEVER leave a section as an empty array. If no data/safe, provide 1 professional bullet point (e.g., 'Not classified', 'Stable').
@@ -356,6 +375,7 @@ ${JSON.stringify(filteredInput, null, 2)}
       transport: { text: outputJson.transport?.length ? outputJson.transport : ["Not regulated for transport."] },
       regulatory: { text: outputJson.regulatory?.length ? outputJson.regulatory : ["No additional regulatory information available."] },
       otherInfo: { text: outputJson.otherInfo?.length ? outputJson.otherInfo : ["Created for safety documentation."] },
+      arabicWarning: outputJson.arabicWarning || "تحذير: يجب مراجعة تعليمات السلامة الإنجليزية لهذا المنتج بعناية والتعامل معه بحذر.",
     };
 
     return NextResponse.json(summarizedData);
