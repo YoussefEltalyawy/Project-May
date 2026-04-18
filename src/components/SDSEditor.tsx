@@ -1,6 +1,6 @@
-import { SDSData } from "@/lib/pubchem";
+import { SDSData, PhysicalProperties } from "@/lib/pubchem";
 
-const SECTIONS: Array<{ key: keyof Omit<SDSData, "cid" | "identity" | "ghs" | "physical">; label: string; num: string }> = [
+const TEXT_SECTIONS: Array<{ key: keyof Omit<SDSData, "cid" | "identity" | "ghs" | "physical">; label: string; num: string }> = [
   { num: "3", key: "hazards", label: "Hazards Identification" },
   { num: "4", key: "firstAid", label: "First Aid Measure" },
   { num: "5", key: "fireFighting", label: "Firefight Measure" },
@@ -12,13 +12,26 @@ const SECTIONS: Array<{ key: keyof Omit<SDSData, "cid" | "identity" | "ghs" | "p
   { num: "10", key: "toxicology", label: "Toxicological Info" },
 ];
 
+const PHYSICAL_PROPS: Array<{ key: keyof PhysicalProperties; label: string }> = [
+  { key: "appearance", label: "Appearance" },
+  { key: "odor", label: "Odor" },
+  { key: "boilingPoint", label: "Boiling Point" },
+  { key: "meltingPoint", label: "Melting Point" },
+  { key: "flashPoint", label: "Flash Point" },
+  { key: "density", label: "Density" },
+  { key: "vaporPressure", label: "Vapor Pressure" },
+  { key: "solubility", label: "Solubility" },
+  { key: "ph", label: "pH" },
+  { key: "autoIgnition", label: "Auto-ignition Temp." },
+];
+
 interface SDSEditorProps {
   data: SDSData;
   onChange: (data: SDSData) => void;
 }
 
 export const SDSEditor = ({ data, onChange }: SDSEditorProps) => {
-  const handleTextChange = (key: keyof typeof data, value: string) => {
+  const handleTextChange = (key: keyof Omit<SDSData, "cid" | "identity" | "ghs" | "physical">, value: string) => {
     const lines = value
       .split("\n")
       .map((line) => line.trim())
@@ -30,10 +43,48 @@ export const SDSEditor = ({ data, onChange }: SDSEditorProps) => {
     });
   };
 
+  const handlePhysicalChange = (key: keyof PhysicalProperties, value: string) => {
+    onChange({
+      ...data,
+      physical: {
+        ...data.physical,
+        [key]: value,
+      },
+    });
+  };
+
   return (
     <div className="flex flex-col gap-6 max-h-[min(85vh,56rem)] min-h-[28rem] h-[calc(100dvh-10rem)] overflow-y-auto pr-2 custom-scrollbar">
-      {SECTIONS.map(({ num, key, label }) => {
-        const textArray = (data as any)[key]?.text || [];
+      {/* Section 2: Physical & Chemical Properties */}
+      <div className="space-y-3">
+        <label className="block text-sm font-semibold text-gray-700 bg-gray-100 px-3 py-1.5 rounded-md border-l-2 border-indigo-600">
+          Section 2: Physical & Chemical Properties (Metric Units)
+        </label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {PHYSICAL_PROPS.map(({ key, label }) => (
+            <div key={key} className="space-y-1">
+              <label
+                htmlFor={`phys-${key}`}
+                className="block text-xs font-medium text-gray-600"
+              >
+                {label}
+              </label>
+              <input
+                id={`phys-${key}`}
+                type="text"
+                value={data.physical[key] || ""}
+                onChange={(e) => handlePhysicalChange(key, e.target.value)}
+                placeholder="-"
+                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Other Sections */}
+      {TEXT_SECTIONS.map(({ num, key, label }) => {
+        const textArray = ((data as unknown) as Record<string, { text?: string[] }>)[key]?.text || [];
         const value = textArray.join("\n\n");
 
         return (
