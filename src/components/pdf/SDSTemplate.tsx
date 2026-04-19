@@ -16,6 +16,9 @@ Font.register({
   src: "/fonts/Cairo-VariableFont_slnt,wght.ttf",
 });
 
+// Disable hyphenation to prevent textkit layout issues
+Font.registerHyphenationCallback((word) => [word]);
+
 const ChemicalFormulaPdf = ({ formula, style }: { formula: string; style?: { fontSize?: number; fontFamily?: string; color?: string } }) => {
   if (!formula) return null;
 
@@ -69,8 +72,8 @@ const S = StyleSheet.create({
     fontSize: 9,
     color: C.text,
     backgroundColor: C.white,
-    paddingTop: 0,
-    paddingBottom: 40,
+    paddingTop: 30,
+    paddingBottom: 50,
     paddingHorizontal: 0,
   },
   hero: {
@@ -78,6 +81,7 @@ const S = StyleSheet.create({
     paddingVertical: 20,
     paddingHorizontal: 44,
     marginBottom: 0,
+    marginTop: -30,
   },
   heroKicker: {
     fontSize: 8,
@@ -115,7 +119,7 @@ const S = StyleSheet.create({
   },
   identityValue: { fontSize: 9, fontFamily: "Helvetica-Bold", color: C.text },
   body: { paddingHorizontal: 44, paddingTop: 18 },
-  section: { marginBottom: 12 },
+  section: { marginBottom: 12, break: "avoid" },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -141,12 +145,10 @@ const S = StyleSheet.create({
     marginBottom: 8,
     paddingVertical: 5,
     paddingHorizontal: 10,
-    backgroundColor: C.indigoLight,
     borderWidth: 0.5,
-    borderColor: C.indigo,
     borderStyle: "solid",
     alignSelf: "flex-start",
-    borderRadius: 4,
+    borderRadius: 0,
   },
   signalText: {
     fontSize: 10,
@@ -199,21 +201,20 @@ const S = StyleSheet.create({
     borderColor: "#fecdd3",
     borderStyle: "solid",
     borderRadius: 6,
+    break: "avoid",
   },
   arabicWarningTitle: {
     fontFamily: "Cairo",
-    fontSize: 14,
+    fontSize: 12,
     color: "#9f1239",
     textAlign: "right",
-    direction: "rtl",
     marginBottom: 4,
   },
   arabicWarningText: {
     fontFamily: "Cairo",
-    fontSize: 12,
+    fontSize: 10,
     color: "#4c0519",
     textAlign: "right",
-    direction: "rtl",
     lineHeight: 1.4,
   },
 });
@@ -288,6 +289,9 @@ export const SDSTemplate = ({ data }: { data: SDSData }) => {
             {data.identity.cas ? ` · CAS ${data.identity.cas}` : ""}
             {` · Ref. CID ${data.cid}`}
           </Text>
+          <Text style={[S.heroKicker, { marginTop: 6 }]}>
+            Prepared by Chemist Maysa Ahmed
+          </Text>
         </View>
 
         <View style={S.identityStrip}>
@@ -339,7 +343,13 @@ export const SDSTemplate = ({ data }: { data: SDSData }) => {
 
           <View style={S.section}>
             <SectionHeader num="3" title="Hazards Identification" />
-            <View style={S.signalRow}>
+            <View style={[
+              S.signalRow,
+              {
+                backgroundColor: data.ghs.signalWord === "Danger" ? "#fecaca" : "#fed7aa",
+                borderColor: signalColor,
+              }
+            ]}>
               <Text style={[S.signalText, { color: signalColor }]}>
                 Signal word: {data.ghs.signalWord}
               </Text>
@@ -399,10 +409,10 @@ export const SDSTemplate = ({ data }: { data: SDSData }) => {
             <TextBlock items={data.toxicology?.text ?? []} />
           </View>
 
-          {data.arabicWarning ? (
-            <View style={S.arabicWarningBox}>
+          {data.arabicWarning && data.arabicWarning.trim() ? (
+            <View style={S.arabicWarningBox} wrap={false}>
               <Text style={S.arabicWarningTitle}>تحذير سلامة (Safety Warning)</Text>
-              <Text style={S.arabicWarningText}>{data.arabicWarning}</Text>
+              <Text style={S.arabicWarningText}>{String(data.arabicWarning)}</Text>
             </View>
           ) : null}
         </View>
