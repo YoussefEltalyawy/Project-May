@@ -4,6 +4,22 @@ import { SDSData, PhysicalProperties } from '@/lib/pubchem';
 import Groq from 'groq-sdk';
 import { expandGHSCodes } from '@/lib/ghs-codes';
 
+// Type definitions
+interface ResponseSchema {
+  type: string;
+  properties: Record<string, unknown>;
+  required?: string[];
+}
+
+interface Chunk {
+  id: string;
+  input: Record<string, unknown>;
+  schema: Record<string, unknown>;
+  customPrompt?: string;
+}
+
+type LLMResult = Record<string, unknown> | null;
+
 /**
  * Converts Fahrenheit to Celsius
  */
@@ -83,9 +99,9 @@ function truncatePrompt(prompt: string, maxTokens: number): string {
 
 // ==================== PROVIDER WRAPPERS ====================
 
-async function tryGemini(prompt: string, responseSchema: any): Promise<any> {
+async function tryGemini(prompt: string, responseSchema: ResponseSchema, apiKey?: string): Promise<LLMResult> {
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const ai = new GoogleGenAI({ apiKey: apiKey || process.env.GEMINI_API_KEY });
     const response = await ai.models.generateContent({
       model: 'gemini-2.0-flash',
       contents: prompt,
@@ -104,7 +120,7 @@ async function tryGemini(prompt: string, responseSchema: any): Promise<any> {
   }
 }
 
-async function tryGroq(prompt: string): Promise<any> {
+async function tryGroq(prompt: string): Promise<LLMResult> {
   try {
     const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
     const freeModels = [
@@ -143,7 +159,7 @@ async function tryGroq(prompt: string): Promise<any> {
   }
 }
 
-async function tryOpenRouter(prompt: string): Promise<any> {
+async function tryOpenRouter(prompt: string): Promise<LLMResult> {
   try {
     const apiKey = process.env.OPENROUTER_API_KEY;
     const siteUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
@@ -289,51 +305,36 @@ export async function POST(request: Request) {
         }
       },
       {
-        id: "Arabic Section 3 - Hazards",
-        input: { hazards: sectionsRaw.hazards.slice(0, 8), signalWord: data.ghs?.signalWord, pictograms: data.ghs?.pictograms },
+        id: "Arabic Safety Warning",
+        input: { hazards: sectionsRaw.hazards.slice(0, 5), firstAid: sectionsRaw.firstAid.slice(0, 3) },
         schema: {
           arabicWarning: { type: "string" },
         },
-        customPrompt: `You are a professional chemical safety translator. Translate Section 3 (Hazards Identification) into ARABIC.
-
+        customPrompt: `You are an expert safety officer. Create a VERY SHORT, URGENT safety warning in ARABIC for laboratory workers. 
 Chemical: "${chemicalName}"
-Signal Word: ${data.ghs?.signalWord || "N/A"}
-GHS Pictograms: ${JSON.stringify(data.ghs?.pictograms || [])}
-Hazards Data: ${JSON.stringify(sectionsRaw.hazards.slice(0, 8))}
-
-TASK:
-Translate the hazards information into professional Modern Standard Arabic (MSA) for an SDS document.
-
-STRUCTURE (in Arabic):
-1. Start with the signal word translation: "كلمة التحذير: [Danger/Warning in Arabic]"
-2. List each hazard as a bullet point in Arabic
-3. Use professional chemical safety terminology
-4. Keep the same level of detail as the English version
+Hazards Context: ${JSON.stringify(sectionsRaw.hazards.slice(0, 5))}
+First Aid Context: ${JSON.stringify(sectionsRaw.firstAid.slice(0, 3))}
 
 RULES:
-- Use formal technical Arabic suitable for official safety documents
-- "Danger" = "خطير" or "خطر شديد"
-- "Warning" = "تحذير"
-- "Flammable" = "قابل للاشتعال"
-- "Toxic" = "سام"
-- "Corrosive" = "تآكلي / حارق"
-- "Carcinogen" = "مسرطن"
-- "Mutagen" = "طافر"
-- "Reproductive toxicity" = "سمية تكاثرية"
-- Return ONLY a JSON object with key "arabicWarning" containing the full Arabic text (3-6 sentences).`
+1. Identify the most critical danger (Toxic/Flammable/Corrosive).
+2. Write in professional Modern Standard Arabic (MSA).
+3. Use phrases like "خطر شديد" (Extreme Danger), "سريع الاشتعال" (Highly Flammable), "سام" (Toxic).
+4. Include 1 lifesaving step (e.g., "استخدم واقي التنفس", "اغسل بالماء فوراً").
+5. Return ONLY a JSON object with the key "arabicWarning".
+6. Keep it under 25 words. DO NOT say "check english instructions".`
       }
     ];
 
     const results = await Promise.all(chunks.map(async (chunk) => {
       // Filter out empty arrays to optimize tokens
-      const filteredInput: any = {};
+      const filteredInput: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(chunk.input)) {
         if (key === 'physical' || (Array.isArray(value) && value.length > 0)) {
           filteredInput[key] = value;
         }
       }
 
-      const prompt = (chunk as any).customPrompt || `You are an expert Safety Data Sheet (SDS) compiler working on a chemical named "${chemicalName}".
+      const prompt = (chunk as Chunk).customPrompt || `You are an expert Safety Data Sheet (SDS) compiler working on a chemical named "${chemicalName}".
 Summarize these specific SDS sections. Follow these rules:
 - Clean, deduplicate, and summarize into 1-5 professional bullet points per section.
 - NEVER leave a section as an empty array. If no data/safe, provide 1 professional bullet point (e.g., 'Not classified', 'Stable').
@@ -350,47 +351,58 @@ ${JSON.stringify(filteredInput, null, 2)}
         required: Object.keys(chunk.schema),
       };
 
-      let chunkResult: any = null;
+      let chunkResult: LLMResult = null;
+      // Try all 3 Gemini keys first (most capable model)
+      if (!chunkResult && process.env.GEMINI_API_KEY1) chunkResult = await tryGemini(prompt, responseSchema, process.env.GEMINI_API_KEY1);
+      if (!chunkResult && process.env.GEMINI_API_KEY2) chunkResult = await tryGemini(prompt, responseSchema, process.env.GEMINI_API_KEY2);
+      if (!chunkResult && process.env.GEMINI_API_KEY3) chunkResult = await tryGemini(prompt, responseSchema, process.env.GEMINI_API_KEY3);
+      // Fall back to other providers
       if (!chunkResult && process.env.GROQ_API_KEY) chunkResult = await tryGroq(prompt);
       if (!chunkResult && process.env.OPENROUTER_API_KEY) chunkResult = await tryOpenRouter(prompt);
-      if (!chunkResult && process.env.GEMINI_API_KEY) chunkResult = await tryGemini(prompt, responseSchema);
 
       return chunkResult || {};
     }));
 
     // Merge results from all chunks
-    const outputJson = results.reduce((acc, curr) => ({ ...acc, ...curr }), {});
+    const outputJson = results.reduce<Record<string, unknown>>((acc, curr) => ({ ...acc, ...curr }), {});
+
+    // Extract typed values from outputJson
+    const physicalOutput = outputJson.physical as Record<string, string> | undefined;
+    const getStringArray = (key: string): string[] | undefined => {
+      const val = outputJson[key];
+      return Array.isArray(val) ? val as string[] : undefined;
+    };
 
     const summarizedData: SDSData = {
       ...data,
       physical: {
-        appearance: outputJson.physical?.appearance ?? data.physical?.appearance ?? "No data available",
-        boilingPoint: outputJson.physical?.boilingPoint ?? data.physical?.boilingPoint ?? "No data available",
-        meltingPoint: outputJson.physical?.meltingPoint ?? data.physical?.meltingPoint ?? "No data available",
-        flashPoint: outputJson.physical?.flashPoint ?? data.physical?.flashPoint ?? "No data available",
-        density: outputJson.physical?.density ?? data.physical?.density ?? "No data available",
-        vaporPressure: outputJson.physical?.vaporPressure ?? data.physical?.vaporPressure ?? "No data available",
-        solubility: outputJson.physical?.solubility ?? data.physical?.solubility ?? "No data available",
-        ph: outputJson.physical?.ph ?? data.physical?.ph ?? "No data available",
-        odor: outputJson.physical?.odor ?? data.physical?.odor ?? "No data available",
-        autoIgnition: outputJson.physical?.autoIgnition ?? data.physical?.autoIgnition ?? "No data available",
+        appearance: physicalOutput?.appearance ?? data.physical?.appearance ?? "No data available",
+        boilingPoint: physicalOutput?.boilingPoint ?? data.physical?.boilingPoint ?? "No data available",
+        meltingPoint: physicalOutput?.meltingPoint ?? data.physical?.meltingPoint ?? "No data available",
+        flashPoint: physicalOutput?.flashPoint ?? data.physical?.flashPoint ?? "No data available",
+        density: physicalOutput?.density ?? data.physical?.density ?? "No data available",
+        vaporPressure: physicalOutput?.vaporPressure ?? data.physical?.vaporPressure ?? "No data available",
+        solubility: physicalOutput?.solubility ?? data.physical?.solubility ?? "No data available",
+        ph: physicalOutput?.ph ?? data.physical?.ph ?? "No data available",
+        odor: physicalOutput?.odor ?? data.physical?.odor ?? "No data available",
+        autoIgnition: physicalOutput?.autoIgnition ?? data.physical?.autoIgnition ?? "No data available",
       },
-      hazards: { text: outputJson.hazards?.length ? outputJson.hazards : ["Not classified as hazardous"] },
-      composition: { text: outputJson.composition?.length ? outputJson.composition : ["No additional ingredients identified."] },
-      firstAid: { text: outputJson.firstAid?.length ? outputJson.firstAid : ["No specific first aid measures required."] },
-      fireFighting: { text: outputJson.fireFighting?.length ? outputJson.fireFighting : ["Use extinguishing media appropriate for surrounding fire."] },
-      accidentalRelease: { text: outputJson.accidentalRelease?.length ? outputJson.accidentalRelease : ["No special requirements."] },
-      handling: { text: outputJson.handling?.length ? outputJson.handling : ["Handle in accordance with good industrial hygiene and safety practice."] },
-      storage: { text: outputJson.storage?.length ? outputJson.storage : ["Store in a cool, well-ventilated place."] },
-      exposure: { text: outputJson.exposure?.length ? outputJson.exposure : ["Contains no substances with occupational exposure limit values."] },
-      stability: { text: outputJson.stability?.length ? outputJson.stability : ["Stable under normal conditions."] },
-      toxicology: { text: outputJson.toxicology?.length ? outputJson.toxicology : ["No toxicological data available for this mixture."] },
-      ecological: { text: outputJson.ecological?.length ? outputJson.ecological : ["No environmental hazards identified."] },
-      disposal: { text: outputJson.disposal?.length ? outputJson.disposal : ["Dispose of in accordance with local regulations."] },
-      transport: { text: outputJson.transport?.length ? outputJson.transport : ["Not regulated for transport."] },
-      regulatory: { text: outputJson.regulatory?.length ? outputJson.regulatory : ["No additional regulatory information available."] },
-      otherInfo: { text: outputJson.otherInfo?.length ? outputJson.otherInfo : ["Created for safety documentation."] },
-      arabicWarning: outputJson.arabicWarning || "تحذير: يجب مراجعة تعليمات السلامة الإنجليزية لهذا المنتج بعناية والتعامل معه بحذر.",
+      hazards: { text: getStringArray('hazards')?.length ? getStringArray('hazards')! : ["Not classified as hazardous"] },
+      composition: { text: getStringArray('composition')?.length ? getStringArray('composition')! : ["No additional ingredients identified."] },
+      firstAid: { text: getStringArray('firstAid')?.length ? getStringArray('firstAid')! : ["No specific first aid measures required."] },
+      fireFighting: { text: getStringArray('fireFighting')?.length ? getStringArray('fireFighting')! : ["Use extinguishing media appropriate for surrounding fire."] },
+      accidentalRelease: { text: getStringArray('accidentalRelease')?.length ? getStringArray('accidentalRelease')! : ["No special requirements."] },
+      handling: { text: getStringArray('handling')?.length ? getStringArray('handling')! : ["Handle in accordance with good industrial hygiene and safety practice."] },
+      storage: { text: getStringArray('storage')?.length ? getStringArray('storage')! : ["Store in a cool, well-ventilated place."] },
+      exposure: { text: getStringArray('exposure')?.length ? getStringArray('exposure')! : ["Contains no substances with occupational exposure limit values."] },
+      stability: { text: getStringArray('stability')?.length ? getStringArray('stability')! : ["Stable under normal conditions."] },
+      toxicology: { text: getStringArray('toxicology')?.length ? getStringArray('toxicology')! : ["No toxicological data available for this mixture."] },
+      ecological: { text: getStringArray('ecological')?.length ? getStringArray('ecological')! : ["No environmental hazards identified."] },
+      disposal: { text: getStringArray('disposal')?.length ? getStringArray('disposal')! : ["Dispose of in accordance with local regulations."] },
+      transport: { text: getStringArray('transport')?.length ? getStringArray('transport')! : ["Not regulated for transport."] },
+      regulatory: { text: getStringArray('regulatory')?.length ? getStringArray('regulatory')! : ["No additional regulatory information available."] },
+      otherInfo: { text: getStringArray('otherInfo')?.length ? getStringArray('otherInfo')! : ["Created for safety documentation."] },
+      arabicWarning: (outputJson.arabicWarning as string) || "تحذير: يجب مراجعة تعليمات السلامة الإنجليزية لهذا المنتج بعناية والتعامل معه بحذر.",
     };
 
     return NextResponse.json(summarizedData);

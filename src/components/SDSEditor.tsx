@@ -1,5 +1,5 @@
 import { SDSData, PhysicalProperties } from "@/lib/pubchem";
-import { Beaker, AlertTriangle, Heart, Flame, Hand, Package, Shield, Leaf, Trash2, Microscope } from "lucide-react";
+import { Beaker, AlertTriangle, Heart, Flame, Hand, Package, Shield, Leaf, Trash2, Microscope, AlertCircle } from "lucide-react";
 
 const TEXT_SECTIONS: Array<{ key: keyof Omit<SDSData, "cid" | "identity" | "ghs" | "physical">; label: string; num: string; icon: React.ElementType }> = [
   { num: "3", key: "hazards", label: "Hazards Identification", icon: AlertTriangle },
@@ -13,7 +13,7 @@ const TEXT_SECTIONS: Array<{ key: keyof Omit<SDSData, "cid" | "identity" | "ghs"
   { num: "10", key: "toxicology", label: "Toxicological Info", icon: Microscope },
 ];
 
-const ARABIC_SECTION = { key: "arabicWarning", label: "Section 3: Hazards (Arabic Translation)" };
+const ARABIC_SECTION = { key: "arabicWarning", label: "Arabic Safety Warning" };
 
 const PHYSICAL_PROPS: Array<{ key: keyof PhysicalProperties; label: string; placeholder: string }> = [
   { key: "appearance", label: "Appearance", placeholder: "e.g. Colorless liquid" },
@@ -117,11 +117,11 @@ export const SDSEditor = ({ data, onChange }: SDSEditorProps) => {
         );
       })}
 
-      {/* Arabic Section 3 - Hazards Translation */}
-      <div className="bg-gradient-to-br from-red-50/50 to-rose-50/30 rounded-xl border border-red-200/60 p-4">
+      {/* Arabic Warning Section */}
+      <div className="bg-gradient-to-br from-red-50/50 to-orange-50/30 rounded-xl border border-red-200/60 p-4">
         <div className="flex items-center gap-2 mb-3">
           <div className="w-7 h-7 rounded-lg bg-red-100 flex items-center justify-center">
-            <AlertTriangle size={14} className="text-red-600" />
+            <AlertCircle size={14} className="text-red-600" />
           </div>
           <label
             htmlFor="editor-arabic"
@@ -136,7 +136,7 @@ export const SDSEditor = ({ data, onChange }: SDSEditorProps) => {
           value={data.arabicWarning || ""}
           onChange={(e) => onChange({ ...data, arabicWarning: e.target.value })}
           dir="rtl"
-          placeholder="ترجمة القسم 3: تحديد المخاطر بالعربية..."
+          placeholder="تحذير السلامة بالعربية..."
           className="w-full min-h-[80px] p-3 text-base border border-red-200 rounded-lg shadow-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white resize-y"
           style={{ fontFamily: "Cairo, sans-serif" }}
         />
