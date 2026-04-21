@@ -289,23 +289,38 @@ export async function POST(request: Request) {
         }
       },
       {
-        id: "Arabic Safety Warning",
-        input: { hazards: sectionsRaw.hazards.slice(0, 5), firstAid: sectionsRaw.firstAid.slice(0, 3) },
+        id: "Arabic Section 3 - Hazards",
+        input: { hazards: sectionsRaw.hazards.slice(0, 8), signalWord: data.ghs?.signalWord, pictograms: data.ghs?.pictograms },
         schema: {
           arabicWarning: { type: "string" },
         },
-        customPrompt: `You are an expert safety officer. Create a VERY SHORT, URGENT safety warning in ARABIC for laboratory workers. 
+        customPrompt: `You are a professional chemical safety translator. Translate Section 3 (Hazards Identification) into ARABIC.
+
 Chemical: "${chemicalName}"
-Hazards Context: ${JSON.stringify(sectionsRaw.hazards.slice(0, 5))}
-First Aid Context: ${JSON.stringify(sectionsRaw.firstAid.slice(0, 3))}
+Signal Word: ${data.ghs?.signalWord || "N/A"}
+GHS Pictograms: ${JSON.stringify(data.ghs?.pictograms || [])}
+Hazards Data: ${JSON.stringify(sectionsRaw.hazards.slice(0, 8))}
+
+TASK:
+Translate the hazards information into professional Modern Standard Arabic (MSA) for an SDS document.
+
+STRUCTURE (in Arabic):
+1. Start with the signal word translation: "كلمة التحذير: [Danger/Warning in Arabic]"
+2. List each hazard as a bullet point in Arabic
+3. Use professional chemical safety terminology
+4. Keep the same level of detail as the English version
 
 RULES:
-1. Identify the most critical danger (Toxic/Flammable/Corrosive).
-2. Write in professional Modern Standard Arabic (MSA).
-3. Use phrases like "خطر شديد" (Extreme Danger), "سريع الاشتعال" (Highly Flammable), "سام" (Toxic).
-4. Include 1 lifesaving step (e.g., "استخدم واقي التنفس", "اغسل بالماء فوراً").
-5. Return ONLY a JSON object with the key "arabicWarning".
-6. Keep it under 25 words. DO NOT say "check english instructions".`
+- Use formal technical Arabic suitable for official safety documents
+- "Danger" = "خطير" or "خطر شديد"
+- "Warning" = "تحذير"
+- "Flammable" = "قابل للاشتعال"
+- "Toxic" = "سام"
+- "Corrosive" = "تآكلي / حارق"
+- "Carcinogen" = "مسرطن"
+- "Mutagen" = "طافر"
+- "Reproductive toxicity" = "سمية تكاثرية"
+- Return ONLY a JSON object with key "arabicWarning" containing the full Arabic text (3-6 sentences).`
       }
     ];
 

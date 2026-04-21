@@ -196,24 +196,24 @@ const S = StyleSheet.create({
   arabicWarningBox: {
     marginTop: 20,
     padding: 12,
-    backgroundColor: "#fff1f2",
+    backgroundColor: "#fef2f2",
     borderWidth: 1,
-    borderColor: "#fecdd3",
+    borderColor: "#fecaca",
     borderStyle: "solid",
     borderRadius: 6,
     break: "avoid",
   },
   arabicWarningTitle: {
     fontFamily: "Cairo",
-    fontSize: 12,
-    color: "#9f1239",
+    fontSize: 11,
+    color: "#991b1b",
     textAlign: "right",
     marginBottom: 4,
   },
   arabicWarningText: {
     fontFamily: "Cairo",
     fontSize: 10,
-    color: "#4c0519",
+    color: "#7f1d1d",
     textAlign: "right",
     lineHeight: 1.4,
   },
@@ -411,7 +411,7 @@ export const SDSTemplate = ({ data }: { data: SDSData }) => {
 
           {data.arabicWarning && data.arabicWarning.trim() ? (
             <View style={S.arabicWarningBox} wrap={false}>
-              <Text style={S.arabicWarningTitle}>تحذير سلامة (Safety Warning)</Text>
+              <Text style={S.arabicWarningTitle}>القسم 3: تحديد المخاطر (Section 3: Hazards Identification)</Text>
               <Text style={S.arabicWarningText}>{String(data.arabicWarning)}</Text>
             </View>
           ) : null}
