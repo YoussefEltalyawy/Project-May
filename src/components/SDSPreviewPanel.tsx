@@ -7,10 +7,10 @@ import { SDSTemplate } from "./pdf/SDSTemplate";
 import { PDFExportButton } from "./pdf/PDFExportButton";
 import { SDSEditor } from "./SDSEditor";
 import { reorderFormula } from "@/lib/formulaUtils";
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { useDebounce } from "use-debounce";
 
-function ChemicalFormulaHtml({ formula }: { formula: string }) {
+const ChemicalFormulaHtml = memo(({ formula }: { formula: string }) => {
   if (!formula) return null;
 
   // Reorder from Hill notation to conventional notation
@@ -36,7 +36,7 @@ function ChemicalFormulaHtml({ formula }: { formula: string }) {
       )}
     </>
   );
-}
+});
 
 const PDFViewer = dynamic(
   () => import("@react-pdf/renderer").then((m) => m.PDFViewer),
@@ -55,7 +55,7 @@ const PDFViewer = dynamic(
 
 export const SDSPreviewPanel = ({ data }: { data: SDSData }) => {
   const [editedData, setEditedData] = useState<SDSData>(data);
-  const [debouncedData] = useDebounce(editedData, 1000);
+  const [debouncedData] = useDebounce(editedData, 2500);
 
   useEffect(() => {
     setEditedData(data);

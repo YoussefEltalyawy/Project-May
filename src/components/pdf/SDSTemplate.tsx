@@ -10,7 +10,7 @@ import { reorderFormula } from "@/lib/formulaUtils";
 import React from "react";
 import { Font } from "@react-pdf/renderer";
 
-// Register Cairo font for Arabic support (local file)
+// Register Cairo font for Arabic support (using local variable font)
 Font.register({
   family: "Cairo",
   src: "/fonts/Cairo-VariableFont_slnt,wght.ttf",
@@ -119,7 +119,7 @@ const S = StyleSheet.create({
   },
   identityValue: { fontSize: 9, fontFamily: "Helvetica-Bold", color: C.text },
   body: { paddingHorizontal: 44, paddingTop: 18 },
-  section: { marginBottom: 12, break: "avoid" },
+  section: { marginBottom: 12 },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -138,7 +138,7 @@ const S = StyleSheet.create({
   },
   row: { flexDirection: "row", marginBottom: 3 },
   label: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.muted, width: 108, flexShrink: 0 },
-  value: { fontSize: 9, flex: 1, color: C.text, lineHeight: 1.35 },
+  value: { fontSize: 9, flex: 1, color: C.text, lineHeight: 1.3 },
   signalRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -157,7 +157,7 @@ const S = StyleSheet.create({
   pictogramRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 8 },
   pictogramBox: { alignItems: "center", width: 58 },
   pictogramImg: { width: 50, height: 50 },
-  pictogramLabel: { fontSize: 6.5, color: C.muted, textAlign: "center", marginTop: 2 },
+  pictogramLabel: { fontSize: 6.5, color: C.muted, textAlign: "center", marginTop: 2, width: 58 },
   subhead: {
     fontSize: 8,
     fontFamily: "Helvetica-Bold",
@@ -176,7 +176,7 @@ const S = StyleSheet.create({
   dot: { fontSize: 8, color: C.indigo, lineHeight: 1.35 },
   bulletText: { fontSize: 9, flex: 1, lineHeight: 1.35, color: C.text },
   propGrid: { flexDirection: "row", flexWrap: "wrap" },
-  propCell: { width: "33%", marginBottom: 6 },
+  propCell: { width: "30%", marginBottom: 6, marginRight: 10 },
   propLabel: { fontSize: 7, fontFamily: "Helvetica-Bold", color: C.muted, marginBottom: 1 },
   propValue: { fontSize: 9, color: C.text },
   footer: {
@@ -201,7 +201,6 @@ const S = StyleSheet.create({
     borderColor: "#fecdd3",
     borderStyle: "solid",
     borderRadius: 6,
-    break: "avoid",
   },
   arabicWarningTitle: {
     fontFamily: "Cairo",
@@ -246,11 +245,13 @@ const InfoRow = ({ label, value }: { label: string; value: React.ReactNode }) =>
 
 /** Renders nothing when there is no content (no “not found” copy). */
 const TextBlock = ({ items }: { items: string[] }) => {
-  if (!items?.length) return null;
+  if (!items || !Array.isArray(items) || items.length === 0) return null;
+  // Limit to 40 items per section to prevent memory issues with massive SDS data
+  const limitedItems = items.slice(0, 40).filter(Boolean);
   return (
     <>
-      {items.map((t, i) => (
-        <BulletItem key={i} text={t} />
+      {limitedItems.map((t, i) => (
+        <BulletItem key={`bullet-${i}`} text={String(t)} />
       ))}
     </>
   );
@@ -409,8 +410,8 @@ export const SDSTemplate = ({ data }: { data: SDSData }) => {
             <TextBlock items={data.toxicology?.text ?? []} />
           </View>
 
-          {data.arabicWarning && data.arabicWarning.trim() ? (
-            <View style={S.arabicWarningBox} wrap={false}>
+          {data.arabicWarning && String(data.arabicWarning).trim() ? (
+            <View style={S.arabicWarningBox}>
               <Text style={S.arabicWarningTitle}>تحذير سلامة (Safety Warning)</Text>
               <Text style={S.arabicWarningText}>{String(data.arabicWarning)}</Text>
             </View>

@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useDebouncedCallback } from "use-debounce";
-import { Search, Loader2 } from "lucide-react";
+import { Search, Loader2, X } from "lucide-react";
 import { autocompleteCompoundNames } from "@/lib/pubchem";
+import { SearchHistory } from "./SearchHistory";
 
 interface CompoundSearchProps {
   onSelectTerm: (term: string) => void;
@@ -15,6 +16,7 @@ export const CompoundSearch = ({ onSelectTerm, isLoading }: CompoundSearchProps)
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [fetchingSuggest, setFetchingSuggest] = useState(false);
   const [open, setOpen] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
   const loadSuggestions = useDebouncedCallback(async (q: string) => {
@@ -51,6 +53,7 @@ export const CompoundSearch = ({ onSelectTerm, isLoading }: CompoundSearchProps)
     e.preventDefault();
     const trimmed = text.trim();
     if (trimmed.length < 2 || isLoading) return;
+    setShowHistory(false);
     if (suggestions.length === 1) {
       pick(suggestions[0]);
       return;
@@ -61,6 +64,12 @@ export const CompoundSearch = ({ onSelectTerm, isLoading }: CompoundSearchProps)
       return;
     }
     pick(trimmed);
+  };
+
+  const handleClear = () => {
+    setText("");
+    setSuggestions([]);
+    setShowHistory(false);
   };
 
   return (
@@ -85,14 +94,28 @@ export const CompoundSearch = ({ onSelectTerm, isLoading }: CompoundSearchProps)
               const v = e.target.value;
               setText(v);
               setOpen(true);
+              setShowHistory(v.trim().length === 0);
               loadSuggestions(v);
             }}
-            onFocus={() => setOpen(true)}
+            onFocus={() => {
+              setOpen(true);
+              setShowHistory(text.trim().length === 0);
+            }}
             placeholder="Start typing a compound name…"
             className="flex-1 bg-transparent text-gray-800 placeholder-gray-400 text-sm outline-none font-medium"
             autoComplete="off"
             spellCheck={false}
           />
+
+          {text && !isLoading && (
+            <button
+              type="button"
+              onClick={handleClear}
+              className="p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
+            >
+              <X size={14} />
+            </button>
+          )}
 
           <button
             type="submit"
@@ -105,7 +128,19 @@ export const CompoundSearch = ({ onSelectTerm, isLoading }: CompoundSearchProps)
           </button>
         </div>
 
-        {open && suggestions.length > 0 && (
+        {/* Search History - shown when focused and empty */}
+        <SearchHistory
+          isVisible={showHistory && !isLoading}
+          onSelect={(term) => {
+            setText(term);
+            pick(term);
+            setShowHistory(false);
+          }}
+          onClose={() => setShowHistory(false)}
+        />
+
+        {/* Suggestions - shown when typing */}
+        {open && suggestions.length > 0 && !showHistory && (
           <ul
             className="absolute z-20 left-0 right-0 top-full mt-1 py-1 rounded-lg border border-gray-200 bg-white shadow-lg max-h-56 overflow-y-auto"
             role="listbox"
@@ -116,7 +151,10 @@ export const CompoundSearch = ({ onSelectTerm, isLoading }: CompoundSearchProps)
                   type="button"
                   className="w-full text-left px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50"
                   onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => pick(s)}
+                  onClick={() => {
+                    setShowHistory(false);
+                    pick(s);
+                  }}
                 >
                   {s}
                 </button>
@@ -127,7 +165,7 @@ export const CompoundSearch = ({ onSelectTerm, isLoading }: CompoundSearchProps)
       </div>
 
       <p className="text-center text-gray-400 text-xs mt-2.5">
-        Suggestions update as you type · Choose a row or press Load when one suggestion matches
+        Suggestions update as you type · Press / to focus · Recent searches shown when empty
       </p>
     </form>
   );

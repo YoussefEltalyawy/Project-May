@@ -100,32 +100,59 @@ function truncatePrompt(prompt: string, maxTokens: number): string {
 // ==================== PROVIDER WRAPPERS ====================
 
 async function tryGemini(prompt: string, responseSchema: ResponseSchema, apiKey?: string): Promise<LLMResult> {
-  try {
-    const ai = new GoogleGenAI({ apiKey: apiKey || process.env.GEMINI_API_KEY });
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash',
-      contents: prompt,
-      config: {
-        systemInstruction: "You strictly output JSON formatting an SDS.",
-        responseMimeType: "application/json",
-        responseSchema: responseSchema,
-        temperature: 0.1,
-      }
-    });
+  // A prioritized list of models available in this 2026 environment
+  const models = [
+    'gemini-2.5-flash-lite',
+    'gemini-3.1-flash-lite-preview',
+    'gemini-3.1-pro-preview',
+    'deep-research-preview-04-2026',
+    'gemini-flash-latest'
+  ];
 
-    return JSON.parse(response.text || '{}');
-  } catch (error) {
-    console.warn("Gemini failed:", (error as Error).message);
-    return null;
+  const ai = new GoogleGenAI({ apiKey: apiKey || process.env.GEMINI_API_KEY });
+
+  for (const modelName of models) {
+    try {
+      const response = await ai.models.generateContent({
+        model: modelName,
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        config: {
+          systemInstruction: "You are a professional safety documentation assistant. You strictly output JSON formatting an SDS summary.",
+          responseMimeType: "application/json",
+          responseSchema: responseSchema as any,
+          temperature: 0.1,
+        }
+      } as any);
+
+      if (response.text) {
+        return JSON.parse(response.text);
+      }
+    } catch (error) {
+      console.warn(`Gemini model ${modelName} failed:`, (error as Error).message);
+      // Fallback to simpler generate if schema logic fails on older/experimental models
+      try {
+        const altResponse = await ai.models.generateContent({
+          model: modelName,
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        } as any);
+        const text = altResponse.text || "";
+        const cleaned = text.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+        if (cleaned.startsWith('{')) return JSON.parse(cleaned);
+      } catch {
+        continue;
+      }
+    }
   }
+  return null;
 }
 
 async function tryGroq(prompt: string): Promise<LLMResult> {
   try {
     const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
     const freeModels = [
-      { id: 'openai/gpt-oss-120b', maxTokens: 4500 }, 
-      { id: 'qwen/qwen3-32b', maxTokens: 3500 },
+      { id: 'llama-3.3-70b-versatile', maxTokens: 6000 },
+      { id: 'gemma2-9b-it', maxTokens: 4000 },
+      { id: 'llama-3.1-8b-instant', maxTokens: 4000 },
     ];
 
     for (const model of freeModels) {
@@ -134,8 +161,8 @@ async function tryGroq(prompt: string): Promise<LLMResult> {
         const completion = await groq.chat.completions.create({
           model: model.id,
           messages: [
-            { role: 'system', content: 'You are an expert Safety Data Sheet (SDS) compiler. You MUST respond with valid JSON only, no markdown, no explanation.' },
-            { role: 'user', content: truncatedPrompt + '\n\nIMPORTANT: Respond with ONLY a valid JSON object. No markdown code blocks, no extra text.' },
+            { role: 'system', content: 'You are an expert Safety Data Sheet (SDS) compiler. Respond ONLY with valid JSON.' },
+            { role: 'user', content: truncatedPrompt },
           ],
           temperature: 0.1,
           max_tokens: 1500,
@@ -143,10 +170,7 @@ async function tryGroq(prompt: string): Promise<LLMResult> {
         });
 
         const content = completion.choices[0]?.message?.content;
-        if (content) {
-          const cleanedContent = content.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
-          return JSON.parse(cleanedContent);
-        }
+        if (content) return JSON.parse(content);
       } catch (modelError) {
         console.warn(`Groq model ${model.id} failed:`, (modelError as Error).message);
         continue;
@@ -162,42 +186,44 @@ async function tryGroq(prompt: string): Promise<LLMResult> {
 async function tryOpenRouter(prompt: string): Promise<LLMResult> {
   try {
     const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) return null;
+    
     const siteUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
     const freeModels = [
-      'google/gemma-3-27b-it:free',
-      'google/gemma-4-31b-it:free',
-      'qwen/qwen3-coder:free',
-      'nvidia/nemotron-3-super-120b-a12b:free',
+      'google/gemini-2.0-flash-lite-001:free',
+      'google/gemini-2.0-pro-exp-02-05:free',
+      'qwen/qwen-2.5-72b-instruct:free',
+      'meta-llama/llama-3.3-70b-instruct:free',
+      'deepseek/deepseek-r1:free',
     ];
 
     for (const model of freeModels) {
       try {
-        const modelPrompt = truncatePrompt(prompt, 3500);
         const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${apiKey}`,
             'Content-Type': 'application/json',
             'HTTP-Referer': siteUrl,
-            'X-OpenRouter-Title': 'SDS Summarizer',
+            'X-OpenRouter-Title': 'Project May SDS',
           },
           body: JSON.stringify({
             model,
             messages: [
-              { role: 'system', content: 'You are an expert Safety Data Sheet (SDS) compiler. You MUST respond with valid JSON only, no markdown, no explanation.' },
-              { role: 'user', content: modelPrompt + '\n\nIMPORTANT: Respond with ONLY a valid JSON object. No markdown code blocks, no extra text.' },
+              { role: 'system', content: 'You are a professional safety data officer. Output ONLY valid JSON.' },
+              { role: 'user', content: prompt + "\n\nIMPORTANT: Return a VALID JSON object matching the requested schema. No conversational text." },
             ],
             temperature: 0.1,
             max_tokens: 1500,
           }),
         });
 
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        if (!response.ok) continue;
         const completion = await response.json();
         const content = completion.choices?.[0]?.message?.content;
         if (content) {
-          const cleanedContent = content.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
-          return JSON.parse(cleanedContent);
+          const cleaned = content.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+          return JSON.parse(cleaned);
         }
       } catch (modelError) {
         console.warn(`OpenRouter model ${model} failed:`, (modelError as Error).message);

@@ -35,8 +35,10 @@ interface SDSEditorProps {
 
 export const SDSEditor = ({ data, onChange }: SDSEditorProps) => {
   const handleTextChange = (key: keyof Omit<SDSData, "cid" | "identity" | "ghs" | "physical">, value: string) => {
+    // Split by double newlines or more to keep logical sections distinct 
+    // while allowing single newlines for formatting within a section.
     const lines = value
-      .split("\n")
+      .split(/\n\n+/)
       .map((line) => line.trim())
       .filter((line) => line.length > 0);
 
@@ -137,8 +139,9 @@ export const SDSEditor = ({ data, onChange }: SDSEditorProps) => {
           onChange={(e) => onChange({ ...data, arabicWarning: e.target.value })}
           dir="rtl"
           placeholder="تحذير السلامة بالعربية..."
-          className="w-full min-h-[80px] p-3 text-base border border-red-200 rounded-lg shadow-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white resize-y"
-          style={{ fontFamily: "Cairo, sans-serif" }}
+          className="w-full min-h-[120px] p-3 text-base border border-red-200 rounded-lg shadow-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white resize-y overflow-auto"
+          style={{ fontFamily: "Cairo, sans-serif", lineHeight: "1.6" }}
+          spellCheck={false}
         />
       </div>
     </div>

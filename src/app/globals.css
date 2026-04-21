@@ -48,3 +48,38 @@ body {
   animation: shimmer 1.4s infinite linear;
   border-radius: 10px;
 }
+
+/* Print styles */
+@media print {
+  /* Hide UI elements */
+  nav, footer, .no-print {
+    display: none !important;
+  }
+
+  /* Reset backgrounds for printing */
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Ensure content is visible */
+  main {
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+
+  /* Page breaks */
+  .page-break {
+    page-break-before: always;
+  }
+
+  .no-page-break {
+    page-break-inside: avoid;
+  }
+
+  /* QR code specific */
+  .qr-print {
+    display: block !important;
+    page-break-inside: avoid;
+  }
+}

@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { CompoundSearch } from "@/components/CompoundSearch";
 import { SDSPreviewPanel } from "@/components/SDSPreviewPanel";
 import { fetchFullSDSByCid, getCIDByName, SDSData } from "@/lib/pubchem";
+import { getCachedSDS, setCachedSDS, addSearchHistory } from "@/lib/cache";
 import { FlaskConical, Beaker, Sparkles, FileText, Database, Search } from "lucide-react";
 
 const LOADING_STEPS = [
@@ -20,13 +21,20 @@ export default function Home() {
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
-  // Progress bar animation
+  // Reset progress when loading starts/stops
   useEffect(() => {
     if (!isLoading) {
-      setProgress(0);
-      setLoadingStep(0);
-      return;
+      const timer = setTimeout(() => {
+        setProgress(0);
+        setLoadingStep(0);
+      }, 0);
+      return () => clearTimeout(timer);
     }
+  }, [isLoading]);
+
+  // Progress bar animation
+  useEffect(() => {
+    if (!isLoading) return;
 
     const interval = setInterval(() => {
       setProgress((prev) => {
@@ -63,18 +71,25 @@ export default function Home() {
       setLoadingStep(1);
       setProgress(30);
 
-      // 1. Check local storage cache (v3 includes Arabic RTL fixes)
-      const cacheKey = `sds_cache_v3_${cid}`;
+      // 1. Check IndexedDB cache
       try {
-        const cached = localStorage.getItem(cacheKey);
+        const cached = await getCachedSDS(cid);
         if (cached) {
-          setData(JSON.parse(cached));
+          setData(cached);
           setProgress(100);
           setTimeout(() => setIsLoading(false), 300);
+          // Still save to history even when using cache
+          await addSearchHistory({
+            term,
+            cid,
+            name: cached.identity.name || term,
+            cas: cached.identity.cas,
+            formula: cached.identity.formula,
+          });
           return;
         }
       } catch (err) {
-        console.warn("Failed to read from localStorage:", err);
+        console.warn("Failed to read from cache:", err);
       }
 
       // 2. Fetch raw data from PubChem
@@ -103,11 +118,18 @@ export default function Home() {
           setProgress(90);
           setData(summarizedResult);
           
-          // 4. Save summarized result to cache
+          // 4. Save summarized result to cache and add to history
           try {
-            localStorage.setItem(cacheKey, JSON.stringify(summarizedResult));
+            await setCachedSDS(cid, summarizedResult);
+            await addSearchHistory({
+              term,
+              cid,
+              name: summarizedResult.identity.name || term,
+              cas: summarizedResult.identity.cas,
+              formula: summarizedResult.identity.formula,
+            });
           } catch (cacheSetErr) {
-            console.warn("Could not write to localStorage (possibly quota exceeded):", cacheSetErr);
+            console.warn("Could not write to cache:", cacheSetErr);
           }
         } else {
           const errorPayload = await summarizeRes.text();
@@ -312,7 +334,7 @@ export default function Home() {
                     title: "Export",
                     desc: "Download professional PDF sheets",
                   },
-                ].map((item, idx) => (
+                ].map((item) => (
                   <div key={item.title} className="flex flex-col items-center">
                     <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-50 to-violet-50 flex items-center justify-center mb-4">
                       <item.icon size={24} className="text-indigo-600" />
