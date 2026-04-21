@@ -10,7 +10,7 @@ const PDFDownloadLink = dynamic(
   {
     ssr: false,
     loading: () => (
-      <button disabled className="flex items-center gap-2 bg-gray-100 text-gray-400 text-sm font-semibold px-4 py-2 rounded-lg cursor-not-allowed">
+      <button disabled className="flex items-center gap-2 bg-amber-100 text-amber-400 text-sm font-semibold px-4 py-2 rounded-lg cursor-not-allowed">
         <Download size={14} />
         Loading…
       </button>
@@ -26,7 +26,7 @@ export const PDFExportButton = ({ data }: { data: SDSData }) => {
       {({ loading }) => (
         <button
           disabled={loading}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold
+          className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold
                      px-4 py-2 rounded-lg active:scale-95 transition-all duration-150
                      disabled:opacity-50 disabled:cursor-not-allowed"
         >
