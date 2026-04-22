@@ -81,7 +81,9 @@ export const SDSPreviewPanel = ({ data }: { data: SDSData }) => {
                 <FileText size={20} className="text-amber-600" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-gray-900 truncate">{editedData.identity.name}</h2>
+                <h2 className="text-lg font-bold text-gray-900 truncate">
+                  {editedData?.identity?.name || "Chemical Compound"}
+                </h2>
                 <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
                   {editedData.identity.cas && (
                     <span className="px-2 py-0.5 bg-gray-100 rounded-md font-mono">CAS {editedData.identity.cas}</span>

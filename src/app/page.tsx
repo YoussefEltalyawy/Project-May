@@ -221,7 +221,7 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-32 pb-16 sm:pt-40 sm:pb-20 overflow-hidden">
+      <section className="relative z-20 pt-32 pb-16 sm:pt-40 sm:pb-20">
         {/* Background gradients */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-100/60 rounded-full blur-3xl" />

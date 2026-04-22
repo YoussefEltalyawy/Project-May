@@ -3,6 +3,7 @@ import { GoogleGenAI } from '@google/genai';
 import { SDSData, PhysicalProperties } from '@/lib/pubchem';
 import Groq from 'groq-sdk';
 import { expandGHSCodes } from '@/lib/ghs-codes';
+import { sql, initDb, retrySql } from '@/lib/db';
 
 // Type definitions
 interface ResponseSchema {
@@ -243,6 +244,33 @@ export async function POST(request: Request) {
   try {
     const data: SDSData = await request.json();
     const chemicalName = data.identity.name;
+    const cid = data.cid;
+
+    // Ensure database is initialized
+    try {
+      await initDb();
+    } catch (e) {
+      console.error("Database initialization failed:", e);
+    }
+
+    // 1. Check if we already have this chemical cached (by CID)
+    if (cid) {
+      try {
+        const existing = await retrySql(() => {
+          if (!sql) throw new Error("Database offline");
+          return sql`SELECT data FROM chemicals WHERE cid = ${cid} LIMIT 1`;
+        });
+        
+        if (existing && Array.isArray(existing) && existing.length > 0) {
+          console.log(`[Cache Hit] Using cached summary for: ${chemicalName} (CID: ${cid})`);
+          // Ensure we return a plain object, not a database row proxy
+          return NextResponse.json(existing[0].data);
+        }
+      } catch (dbError) {
+        console.error("Database lookup error (skipping cache):", (dbError as Error).message);
+        // Continue to LLM if DB fails
+      }
+    }
 
     const sectionsRaw = {
       hazards: (data.hazards?.text || []).map(t => expandGHSCodes(t)),
@@ -378,15 +406,24 @@ ${JSON.stringify(filteredInput, null, 2)}
       };
 
       let chunkResult: LLMResult = null;
-      // Try all 3 Gemini keys first (most capable model)
-      if (!chunkResult && process.env.GEMINI_API_KEY1) chunkResult = await tryGemini(prompt, responseSchema, process.env.GEMINI_API_KEY1);
-      if (!chunkResult && process.env.GEMINI_API_KEY2) chunkResult = await tryGemini(prompt, responseSchema, process.env.GEMINI_API_KEY2);
-      if (!chunkResult && process.env.GEMINI_API_KEY3) chunkResult = await tryGemini(prompt, responseSchema, process.env.GEMINI_API_KEY3);
-      // Fall back to other providers
-      if (!chunkResult && process.env.GROQ_API_KEY) chunkResult = await tryGroq(prompt);
-      if (!chunkResult && process.env.OPENROUTER_API_KEY) chunkResult = await tryOpenRouter(prompt);
+      
+      // Add a timeout to the AI call to prevent hanging the whole request
+      const aiPromise = (async () => {
+        // Try all 3 Gemini keys first
+        if (!chunkResult && process.env.GEMINI_API_KEY1) chunkResult = await tryGemini(prompt, responseSchema, process.env.GEMINI_API_KEY1);
+        if (!chunkResult && process.env.GEMINI_API_KEY2) chunkResult = await tryGemini(prompt, responseSchema, process.env.GEMINI_API_KEY2);
+        if (!chunkResult && process.env.GEMINI_API_KEY3) chunkResult = await tryGemini(prompt, responseSchema, process.env.GEMINI_API_KEY3);
+        // Fall back to other providers
+        if (!chunkResult && process.env.GROQ_API_KEY) chunkResult = await tryGroq(prompt);
+        if (!chunkResult && process.env.OPENROUTER_API_KEY) chunkResult = await tryOpenRouter(prompt);
+        return chunkResult;
+      })();
 
-      return chunkResult || {};
+      // 25 second timeout per chunk to ensure overall request doesn't exceed Vercel limit
+      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 25000));
+      
+      const winner = await Promise.race([aiPromise, timeoutPromise]);
+      return (winner as LLMResult) || {};
     }));
 
     // Merge results from all chunks
@@ -431,7 +468,28 @@ ${JSON.stringify(filteredInput, null, 2)}
       arabicWarning: (outputJson.arabicWarning as string) || "تحذير: يجب مراجعة تعليمات السلامة الإنجليزية لهذا المنتج بعناية والتعامل معه بحذر.",
     };
 
+    // 2. Cache the result for future use
+    if (cid && sql) {
+      try {
+        await retrySql(() => {
+          if (!sql) return Promise.resolve(null);
+          return sql`
+            INSERT INTO chemicals (cid, name, data)
+            VALUES (${cid}, ${chemicalName}, ${summarizedData})
+            ON CONFLICT (cid) DO UPDATE SET 
+              data = EXCLUDED.data,
+              name = EXCLUDED.name,
+              created_at = CURRENT_TIMESTAMP
+          `;
+        });
+        console.log(`[Cache Save] Saved summary for: ${chemicalName} (CID: ${cid})`);
+      } catch (dbError) {
+        console.error("Failed to cache chemical data:", (dbError as Error).message);
+      }
+    }
+
     return NextResponse.json(summarizedData);
+
   } catch (error) {
     console.error("SDS Summarization Error:", error);
     return NextResponse.json(

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.50.1",
+    "@neondatabase/serverless": "^0.10.4",
     "@openrouter/sdk": "^0.12.9",
     "@react-pdf/renderer": "^4.4.1",
     "groq-sdk": "^1.1.2",

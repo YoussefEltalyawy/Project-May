@@ -127,7 +127,7 @@ export const CompoundSearch = ({ onSelectTerm, isLoading }: CompoundSearchProps)
 
   return (
     <form onSubmit={onSubmit} className="w-full max-w-2xl mx-auto">
-      <div ref={wrapRef} className="relative">
+      <div ref={wrapRef} className="relative z-50">
         {/* Search Input Container */}
         <div
           className={`relative z-50 flex items-center bg-white rounded-2xl border transition-all duration-200 ${

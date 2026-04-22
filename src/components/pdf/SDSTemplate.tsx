@@ -247,7 +247,7 @@ const InfoRow = ({ label, value }: { label: string; value: React.ReactNode }) =>
 const TextBlock = ({ items }: { items: string[] }) => {
   if (!items || !Array.isArray(items) || items.length === 0) return null;
   // Limit to 40 items per section to prevent memory issues with massive SDS data
-  const limitedItems = items.slice(0, 40).filter(Boolean);
+  const limitedItems = items.slice(0, 40).filter(item => item && typeof item === 'string');
   return (
     <>
       {limitedItems.map((t, i) => (
@@ -261,16 +261,16 @@ export const SDSTemplate = ({ data }: { data: SDSData }) => {
   const signalColor = data.ghs.signalWord === "Danger" ? C.danger : C.warn;
 
   const physProps = [
-    { label: "Appearance", value: data.physical.appearance },
-    { label: "Odor", value: data.physical.odor },
-    { label: "Boiling point", value: data.physical.boilingPoint },
-    { label: "Melting point", value: data.physical.meltingPoint },
-    { label: "Flash point", value: data.physical.flashPoint },
-    { label: "Density", value: data.physical.density },
-    { label: "Vapor pressure", value: data.physical.vaporPressure },
-    { label: "Solubility", value: data.physical.solubility },
-    { label: "pH", value: data.physical.ph },
-    { label: "Auto-ignition temp.", value: data.physical.autoIgnition },
+    { label: "Appearance", value: data.physical?.appearance },
+    { label: "Odor", value: data.physical?.odor },
+    { label: "Boiling point", value: data.physical?.boilingPoint },
+    { label: "Melting point", value: data.physical?.meltingPoint },
+    { label: "Flash point", value: data.physical?.flashPoint },
+    { label: "Density", value: data.physical?.density },
+    { label: "Vapor pressure", value: data.physical?.vaporPressure },
+    { label: "Solubility", value: data.physical?.solubility },
+    { label: "pH", value: data.physical?.ph },
+    { label: "Auto-ignition temp.", value: data.physical?.autoIgnition },
   ].filter(p => p.value);
 
   const prepared = new Date().toLocaleDateString("en-GB", {
@@ -356,13 +356,14 @@ export const SDSTemplate = ({ data }: { data: SDSData }) => {
               </Text>
             </View>
 
-            {data.ghs.pictograms.length > 0 ? (
+            {Array.isArray(data.ghs?.pictograms) && data.ghs.pictograms.length > 0 ? (
               <View style={S.pictogramRow}>
                 {data.ghs.pictograms.map((code) => {
+                  if (!code) return null;
                   const src = GHS_PICTOGRAMS_B64[code];
                   if (!src) return null;
                   return (
-                    <View key={code} style={S.pictogramBox}>
+                    <View key={`pict-${code}`} style={S.pictogramBox}>
                       {/* eslint-disable-next-line jsx-a11y/alt-text -- react-pdf Image */}
                       <Image src={src} style={S.pictogramImg} />
                       <Text style={S.pictogramLabel}>{getPictogramLabel(code)}</Text>
