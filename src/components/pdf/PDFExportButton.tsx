@@ -20,9 +20,14 @@ const PDFDownloadLink = dynamic(
 
 export const PDFExportButton = ({ data }: { data: SDSData }) => {
   const filename = `SDS_${data.identity.name.replace(/\s+/g, "_")}_${data.identity.cas || data.cid}.pdf`;
+  const dataHash = `${data.cid}-${JSON.stringify(data).length}`;
 
   return (
-    <PDFDownloadLink document={<SDSTemplate data={data} />} fileName={filename}>
+    <PDFDownloadLink 
+      key={`download-${dataHash}`}
+      document={<SDSTemplate data={data} />} 
+      fileName={filename}
+    >
       {({ loading }) => (
         <button
           disabled={loading}

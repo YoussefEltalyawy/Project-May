@@ -112,6 +112,13 @@ export async function setCachedSDS(cid: string, data: SDSData): Promise<void> {
 export async function addSearchHistory(item: Omit<SearchHistoryItem, "id" | "timestamp">): Promise<void> {
   try {
     const database = await openDatabase();
+    
+    // Skip if this compound is the same as the most recent search (consecutive duplicates)
+    const existing = await getSearchHistory(1);
+    if (existing.length > 0 && existing[0].cid === item.cid) {
+      return;
+    }
+
     const id = `${item.cid}-${Date.now()}`;
     const historyItem: SearchHistoryItem = {
       ...item,

@@ -187,7 +187,7 @@ export const SDSPreviewPanel = ({ data }: { data: SDSData }) => {
               <div className="flex-1 p-4 bg-gray-50/30">
                 <div className="w-full h-full rounded-xl overflow-hidden border border-gray-200 bg-white shadow-inner">
                   <PDFViewer
-                    key={`viewer-${debouncedData.cid}`}
+                    key={`viewer-${debouncedData.cid}-${JSON.stringify(debouncedData).length}`}
                     width="100%"
                     height="100%"
                     showToolbar

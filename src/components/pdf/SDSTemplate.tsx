@@ -13,13 +13,26 @@ import { Font } from "@react-pdf/renderer";
 // Register Cairo font for Arabic support (using local variable font)
 Font.register({
   family: "Cairo",
-  src: "/fonts/Cairo-VariableFont_slnt,wght.ttf",
+  fonts: [
+    { src: "/fonts/Cairo-VariableFont_slnt,wght.ttf", fontStyle: "normal", fontWeight: "normal" }
+  ]
 });
 
-// Disable hyphenation to prevent textkit layout issues
+// Hyphenation callback is still global
 Font.registerHyphenationCallback((word) => [word]);
 
-const ChemicalFormulaPdf = ({ formula, style }: { formula: string; style?: { fontSize?: number; fontFamily?: string; color?: string } }) => {
+/**
+ * Strips problematic Unicode control characters that can cause layout engine crashes
+ * if the selected font lacks corresponding glyphs or if BiDi reordering fails.
+ */
+const sanitizeText = (text: string): string => {
+  if (!text) return "";
+  // Remove zero-width spaces, invisible separators, and complex BiDi markers 
+  // that are known to trigger the 'reading id of undefined' crash in react-pdf/textkit
+  return text.replace(/[\u200B-\u200D\uFEFF\u200E\u200F\u202A-\u202E]/g, "");
+};
+
+const ChemicalFormulaPdf = ({ formula, style }: { formula: string; style?: any }) => {
   if (!formula) return null;
 
   // Reorder from Hill notation to conventional notation
@@ -38,15 +51,17 @@ const ChemicalFormulaPdf = ({ formula, style }: { formula: string; style?: { fon
   const remainingText = reordered.slice(lastIndex);
   if (remainingText) items.push({ text: remainingText, sub: false });
 
+  // Extract lineHeight as it can cause crashes in react-pdf when used with nested Text nodes
+  const { lineHeight, ...baseStyle } = style || {};
   const subStyle = { fontSize: (style?.fontSize || 9) * 0.65, color: style?.color };
 
   return (
-    <Text style={style}>
-      {items.map((item, i) =>
+    <Text style={baseStyle}>
+      {Array.isArray(items) && items.map((item, i) =>
         item.sub ? (
-          <Text key={i} style={subStyle}>{item.text}</Text>
+          <Text key={i} style={subStyle}>{item.text || ""}</Text>
         ) : (
-          item.text
+          item.text || ""
         )
       )}
     </Text>
@@ -207,6 +222,7 @@ const S = StyleSheet.create({
     fontSize: 12,
     color: "#9f1239",
     textAlign: "right",
+    direction: "rtl",
     marginBottom: 4,
   },
   arabicWarningText: {
@@ -214,6 +230,7 @@ const S = StyleSheet.create({
     fontSize: 10,
     color: "#4c0519",
     textAlign: "right",
+    direction: "rtl",
     lineHeight: 1.4,
   },
 });
@@ -258,7 +275,7 @@ const TextBlock = ({ items }: { items: string[] }) => {
 };
 
 export const SDSTemplate = ({ data }: { data: SDSData }) => {
-  const signalColor = data.ghs.signalWord === "Danger" ? C.danger : C.warn;
+  const signalColor = (data?.ghs?.signalWord === "Danger") ? C.danger : C.warn;
 
   const physProps = [
     { label: "Appearance", value: data.physical?.appearance },
@@ -279,9 +296,9 @@ export const SDSTemplate = ({ data }: { data: SDSData }) => {
       <Page size="A4" style={S.page}>
         <View style={S.hero}>
           <Text style={S.heroKicker}>Safety data sheet · summary</Text>
-          <Text style={S.heroTitle}>{data.identity.name}</Text>
+          <Text style={S.heroTitle}>{data?.identity?.name || "Chemical Compound"}</Text>
 
-          {data.preparedBy && (
+          {data?.preparedBy && (
             <Text style={[S.heroKicker, { marginTop: 6 }]}>
               Prepared by {data.preparedBy}
             </Text>
@@ -292,15 +309,15 @@ export const SDSTemplate = ({ data }: { data: SDSData }) => {
           <View style={S.identityRow}>
             <View style={S.identityBlock}>
               <Text style={S.identityLabel}>Signal</Text>
-              <Text style={S.identityValue}>{data.ghs.signalWord}</Text>
+              <Text style={S.identityValue}>{data?.ghs?.signalWord || "Warning"}</Text>
             </View>
-            {data.identity.formula ? (
+            {data?.identity?.formula ? (
               <View style={S.identityBlock}>
                 <Text style={S.identityLabel}>Formula</Text>
                 <ChemicalFormulaPdf formula={data.identity.formula} style={S.identityValue} />
               </View>
             ) : null}
-            {data.identity.molecularWeight ? (
+            {data?.identity?.molecularWeight ? (
               <View style={S.identityBlock}>
                 <Text style={S.identityLabel}>Mol. weight</Text>
                 <Text style={S.identityValue}>{data.identity.molecularWeight}</Text>
@@ -312,23 +329,23 @@ export const SDSTemplate = ({ data }: { data: SDSData }) => {
         <View style={S.body}>
           <View style={S.section}>
             <SectionHeader num="1" title="Identification" />
-            <InfoRow label="Product name" value={data.identity.name} />
-            <InfoRow label="IUPAC name" value={data.identity.iupacName} />
-            <InfoRow label="Formula" value={<ChemicalFormulaPdf formula={data.identity.formula} style={S.value} />} />
-            <InfoRow label="Molecular weight" value={data.identity.molecularWeight} />
-            {data.identity.synonyms.length > 0 ? (
+            <InfoRow label="Product name" value={data?.identity?.name || ""} />
+            <InfoRow label="IUPAC name" value={data?.identity?.iupacName || ""} />
+            <InfoRow label="Formula" value={data?.identity?.formula ? <ChemicalFormulaPdf formula={data.identity.formula} style={S.value} /> : ""} />
+            <InfoRow label="Molecular weight" value={data?.identity?.molecularWeight || ""} />
+            {(data?.identity?.synonyms?.length ?? 0) > 0 ? (
               <InfoRow label="Synonyms" value={data.identity.synonyms.join("; ")} />
             ) : null}
           </View>
 
           <View style={S.section}>
             <SectionHeader num="2" title="Physical & Chemical Properties" />
-            {physProps.length > 0 ? (
+            {(physProps?.length ?? 0) > 0 ? (
               <View style={S.propGrid}>
-                {physProps.map(({ label, value }) => (
-                  <View key={label} style={S.propCell}>
-                    <Text style={S.propLabel}>{label}</Text>
-                    <Text style={S.propValue}>{value}</Text>
+                {physProps.map((p) => p && p.label && (
+                  <View key={p.label} style={S.propCell}>
+                    <Text style={S.propLabel}>{p.label}</Text>
+                    <Text style={S.propValue}>{p.value || ""}</Text>
                   </View>
                 ))}
               </View>
@@ -340,16 +357,16 @@ export const SDSTemplate = ({ data }: { data: SDSData }) => {
             <View style={[
               S.signalRow,
               {
-                backgroundColor: data.ghs.signalWord === "Danger" ? "#fecaca" : "#fed7aa",
-                borderColor: signalColor,
+                backgroundColor: (data?.ghs?.signalWord === "Danger") ? "#fecaca" : "#fed7aa",
+                borderColor: signalColor || C.warn,
               }
             ]}>
-              <Text style={[S.signalText, { color: signalColor }]}>
-                Signal word: {data.ghs.signalWord}
+              <Text style={[S.signalText, { color: signalColor || C.warn }]}>
+                Signal word: {data?.ghs?.signalWord || "Warning"}
               </Text>
             </View>
 
-            {Array.isArray(data.ghs?.pictograms) && data.ghs.pictograms.length > 0 ? (
+            {Array.isArray(data?.ghs?.pictograms) && data.ghs.pictograms.length > 0 ? (
               <View style={S.pictogramRow}>
                 {data.ghs.pictograms.map((code) => {
                   if (!code) return null;
@@ -357,7 +374,6 @@ export const SDSTemplate = ({ data }: { data: SDSData }) => {
                   if (!src) return null;
                   return (
                     <View key={`pict-${code}`} style={S.pictogramBox}>
-                      {/* eslint-disable-next-line jsx-a11y/alt-text -- react-pdf Image */}
                       <Image src={src} style={S.pictogramImg} />
                       <Text style={S.pictogramLabel}>{getPictogramLabel(code)}</Text>
                     </View>
@@ -366,48 +382,54 @@ export const SDSTemplate = ({ data }: { data: SDSData }) => {
               </View>
             ) : null}
 
-            <TextBlock items={data.hazards?.text ?? []} />
+            <TextBlock items={data?.hazards?.text ?? []} />
           </View>
 
           <View style={S.section}>
             <SectionHeader num="4" title="First Aid Measure" />
-            <TextBlock items={data.firstAid?.text ?? []} />
+            <TextBlock items={data?.firstAid?.text ?? []} />
           </View>
 
           <View style={S.section}>
             <SectionHeader num="5" title="Firefight Measure" />
-            <TextBlock items={data.fireFighting?.text ?? []} />
+            <TextBlock items={data?.fireFighting?.text ?? []} />
           </View>
 
           <View style={S.section}>
             <SectionHeader num="6" title="Handling and Storage" />
-            <TextBlock items={[...(data.handling?.text ?? []), ...(data.storage?.text ?? [])]} />
+            <TextBlock items={[...(data?.handling?.text ?? []), ...(data?.storage?.text ?? [])]} />
           </View>
 
           <View style={S.section}>
             <SectionHeader num="7" title="Exposure Controls / Personal Protection" />
-            <TextBlock items={data.exposure?.text ?? []} />
+            <TextBlock items={data?.exposure?.text ?? []} />
           </View>
 
           <View style={S.section}>
             <SectionHeader num="8" title="Ecological Information" />
-            <TextBlock items={data.ecological?.text ?? []} />
+            <TextBlock items={data?.ecological?.text ?? []} />
           </View>
 
           <View style={S.section}>
             <SectionHeader num="9" title="Disposal Considerations" />
-            <TextBlock items={data.disposal?.text ?? []} />
+            <TextBlock items={data?.disposal?.text ?? []} />
           </View>
 
           <View style={S.section}>
             <SectionHeader num="10" title="Toxicological Info" />
-            <TextBlock items={data.toxicology?.text ?? []} />
+            <TextBlock items={data?.toxicology?.text ?? []} />
           </View>
 
-          {data.arabicWarning && String(data.arabicWarning).trim() ? (
-            <View style={S.arabicWarningBox}>
-              <Text style={S.arabicWarningTitle}>تحذير سلامة (Safety Warning)</Text>
-              <Text style={S.arabicWarningText}>{String(data.arabicWarning)}</Text>
+          {data?.arabicWarning && String(data.arabicWarning).trim() ? (
+            <View style={[S.arabicWarningBox, { alignItems: 'flex-end' }]}>
+              <Text style={[S.arabicWarningTitle, { marginBottom: 4 }]}>تحذير سلامة</Text>
+              {sanitizeText(String(data.arabicWarning))
+                .split('\n')
+                .filter(line => line.trim())
+                .map((line, i) => (
+                  <Text key={`ar-line-${i}`} style={S.arabicWarningText}>{line}</Text>
+                ))
+              }
             </View>
           ) : null}
         </View>
