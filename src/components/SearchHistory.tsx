@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { getSearchHistory, deleteSearchHistoryItem, clearSearchHistory, SearchHistoryItem } from "@/lib/cache";
+import { reorderFormula } from "@/lib/formulaUtils";
 import { Clock, X, Trash2, History, Beaker } from "lucide-react";
 
 interface SearchHistoryProps {
@@ -132,7 +133,7 @@ export function SearchHistory({ onSelect, isVisible, onClose }: SearchHistoryPro
                     </span>
                   )}
                   {item.formula && (
-                    <span className="font-mono text-gray-500">{item.formula}</span>
+                    <span className="font-mono text-gray-500">{reorderFormula(item.formula)}</span>
                   )}
                   {(item.cas || item.formula) && (
                     <span className="text-gray-300">·</span>

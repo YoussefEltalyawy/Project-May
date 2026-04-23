@@ -60,6 +60,29 @@ export const SDSEditor = ({ data, onChange }: SDSEditorProps) => {
 
   return (
     <div className="flex flex-col gap-5 h-full overflow-y-auto pr-1 pb-4">
+      {/* Preparation Metadata */}
+      <div className="bg-white rounded-xl border border-gray-200/60 p-4 shadow-sm">
+        <label htmlFor="preparedBy" className="block text-sm font-semibold text-gray-800 mb-2">
+          Prepared By
+        </label>
+        <div className="relative">
+          <input
+            id="preparedBy"
+            type="text"
+            value={data.preparedBy || ""}
+            onChange={(e) => onChange({ ...data, preparedBy: e.target.value })}
+            placeholder="e.g. Chemist Maysa Ahmed"
+            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white transition-all hover:border-gray-300"
+          />
+          {!data.preparedBy && (
+            <p className="mt-1.5 text-[10px] text-amber-600 flex items-center gap-1">
+              <span className="w-1 h-1 rounded-full bg-amber-500" />
+              Leaving this empty will remove the line from the PDF
+            </p>
+          )}
+        </div>
+      </div>
+
       {/* Section 2: Physical & Chemical Properties */}
       <div className="bg-gradient-to-br from-blue-50/50 to-indigo-50/30 rounded-xl border border-blue-100 p-4">
         <div className="flex items-center gap-2 mb-4">

@@ -11,7 +11,32 @@
  * - "H3N" → "NH3" (ammonia - central atom first)
  * - "NaCl" → "NaCl" (sodium chloride, no change)
  * - "FH" → "HF" (hydrogen fluoride - central atom first)
+ * - "ClK" → "KCl" (potassium chloride - metal first)
  */
+
+// Set of metal elements for ionic compound ordering (metal first)
+const METAL_ELEMENTS = new Set([
+  // Alkali metals
+  "Li", "Na", "K", "Rb", "Cs", "Fr",
+  // Alkaline earth metals
+  "Be", "Mg", "Ca", "Sr", "Ba", "Ra",
+  // Transition metals
+  "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn",
+  "Y", "Zr", "Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd",
+  "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg",
+  "Rf", "Db", "Sg", "Bh", "Hs", "Mt", "Ds", "Rg", "Cn",
+  // Post-transition metals
+  "Al", "Ga", "In", "Sn", "Tl", "Pb", "Bi", "Nh", "Fl", "Mc", "Lv",
+  // Lanthanides
+  "La", "Ce", "Pr", "Nd", "Pm", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho", "Er", "Tm", "Yb", "Lu",
+  // Actinides
+  "Ac", "Th", "Pa", "U", "Np", "Pu", "Am", "Cm", "Bk", "Cf", "Es", "Fm", "Md", "No", "Lr",
+]);
+
+function isMetal(element: string): boolean {
+  return METAL_ELEMENTS.has(element);
+}
+
 export function reorderFormula(formula: string): string {
   if (!formula) return formula;
 
@@ -81,6 +106,22 @@ export function reorderFormula(formula: string): string {
     }
   }
 
+  // Binary ionic compounds without H (no C, no H): metal first, non-metal second
+  // Examples: KCl, NaCl, CaF2, MgO
+  if (!hasH && elementList.length === 2) {
+    const [el1, el2] = elementList.map(([el]) => el);
+    const count1 = elements.get(el1) || 1;
+    const count2 = elements.get(el2) || 1;
+
+    // If first element is metal, keep order; if second is metal, swap
+    if (isMetal(el1) && !isMetal(el2)) {
+      return el1 + (count1 > 1 ? count1 : "") + el2 + (count2 > 1 ? count2 : "");
+    } else if (isMetal(el2) && !isMetal(el1)) {
+      return el2 + (count2 > 1 ? count2 : "") + el1 + (count1 > 1 ? count1 : "");
+    }
+    // Neither or both are metals - fall through to default logic
+  }
+
   // Default: H first for remaining cases, then others, O last
   let result = "";
 
@@ -88,8 +129,18 @@ export function reorderFormula(formula: string): string {
     result += "H" + (hCount > 1 ? hCount : "");
   }
 
-  // Other elements except O
+  // Other elements except O - but for binary compounds without H, try to put metal first
   const nonOxygenElements = elementList.filter(([el]) => el !== "O" && el !== "H");
+
+  // Sort: metals first, then non-metals (to handle cases like CaCl2 where both need ordering)
+  nonOxygenElements.sort(([elA], [elB]) => {
+    const aIsMetal = isMetal(elA);
+    const bIsMetal = isMetal(elB);
+    if (aIsMetal && !bIsMetal) return -1;
+    if (!aIsMetal && bIsMetal) return 1;
+    return 0; // Keep original order if both same type
+  });
+
   for (const [el, count] of nonOxygenElements) {
     result += el + (count > 1 ? count : "");
   }

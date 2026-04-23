@@ -273,11 +273,6 @@ export const SDSTemplate = ({ data }: { data: SDSData }) => {
     { label: "Auto-ignition temp.", value: data.physical?.autoIgnition },
   ].filter(p => p.value);
 
-  const prepared = new Date().toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
 
   return (
     <Document>
@@ -286,13 +281,14 @@ export const SDSTemplate = ({ data }: { data: SDSData }) => {
           <Text style={S.heroKicker}>Safety data sheet · summary</Text>
           <Text style={S.heroTitle}>{data.identity.name}</Text>
           <Text style={S.heroMeta}>
-            {prepared}
-            {data.identity.cas ? ` · CAS ${data.identity.cas}` : ""}
-            {` · Ref. CID ${data.cid}`}
+            {data.identity.cas ? `CAS ${data.identity.cas} · ` : ""}
+            {`Ref. CID ${data.cid}`}
           </Text>
-          <Text style={[S.heroKicker, { marginTop: 6 }]}>
-            Prepared by Chemist Maysa Ahmed
-          </Text>
+          {data.preparedBy && (
+            <Text style={[S.heroKicker, { marginTop: 6 }]}>
+              Prepared by {data.preparedBy}
+            </Text>
+          )}
         </View>
 
         <View style={S.identityStrip}>

@@ -63,6 +63,7 @@ export interface SDSData {
   regulatory: { text: string[] };
   otherInfo: { text: string[] };
   arabicWarning?: string;
+  preparedBy?: string;
 }
 
 // ─── API constants ────────────────────────────────────────────────────────────
@@ -519,6 +520,7 @@ export async function fetchFullSDSByCid(cid: string, fallbackName?: string): Pro
     transport,
     regulatory,
     otherInfo,
+    preparedBy: "Chemist Maysa Ahmed",
   };
 }
 
