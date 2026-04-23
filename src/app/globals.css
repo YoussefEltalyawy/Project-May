@@ -118,7 +118,7 @@ body {
   color: #d97706;
 }
 .ring-accent {
-  ring-color: #f59e0b;
+  box-shadow: 0 0 0 2px #f59e0b;
 }
 
 .animate-pulse-ring {
@@ -144,9 +144,7 @@ body {
 /* Focus styles */
 .focus-ring:focus-visible {
   outline: none;
-  ring: 2px;
-  ring-offset: 2px;
-  ring-color: #f59e0b;
+  box-shadow: 0 0 0 2px white, 0 0 0 4px #f59e0b;
 }
 
 /* Gradient text */
@@ -201,3 +199,27 @@ body {
     page-break-inside: avoid;
   }
 }
+
+/* Scrollbar utilities */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.1);
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0,0,0,0.2);
+}
+

@@ -280,10 +280,7 @@ export const SDSTemplate = ({ data }: { data: SDSData }) => {
         <View style={S.hero}>
           <Text style={S.heroKicker}>Safety data sheet · summary</Text>
           <Text style={S.heroTitle}>{data.identity.name}</Text>
-          <Text style={S.heroMeta}>
-            {data.identity.cas ? `CAS ${data.identity.cas} · ` : ""}
-            {`Ref. CID ${data.cid}`}
-          </Text>
+
           {data.preparedBy && (
             <Text style={[S.heroKicker, { marginTop: 6 }]}>
               Prepared by {data.preparedBy}

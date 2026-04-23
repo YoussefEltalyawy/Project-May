@@ -85,9 +85,7 @@ export const SDSPreviewPanel = ({ data }: { data: SDSData }) => {
                   {editedData?.identity?.name || "Chemical Compound"}
                 </h2>
                 <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
-                  {editedData.identity.cas && (
-                    <span className="px-2 py-0.5 bg-gray-100 rounded-md font-mono">CAS {editedData.identity.cas}</span>
-                  )}
+
                   {editedData.identity.formula && (
                     <span className="font-mono px-2 py-0.5 bg-gray-100 rounded-md">
                       <ChemicalFormulaHtml formula={editedData.identity.formula} />
@@ -107,24 +105,26 @@ export const SDSPreviewPanel = ({ data }: { data: SDSData }) => {
             >
               <ExternalLink size={14} />
               <span className="hidden sm:inline">PubChem</span>
-              <span className="sm:hidden">CID {editedData.cid}</span>
+
             </a>
             <PDFExportButton key={`export-${debouncedData.cid}`} data={debouncedData} />
           </div>
         </div>
       </div>
 
-      {/* Mobile Tab Switcher */}
-      {isMobile && (
-        <div className="flex p-1 bg-gray-100 rounded-xl">
-          {[
-            { id: "edit", label: "Edit", icon: Pencil },
-            { id: "preview", label: "Preview", icon: Eye },
-          ].map(({ id, label, icon: Icon }) => (
+      {/* View Switcher */}
+      <div className="flex p-1 bg-gray-100 rounded-xl max-w-sm">
+        {[
+          { id: "split", label: "Split", icon: FileText, hideOnMobile: true },
+          { id: "edit", label: "Edit", icon: Pencil },
+          { id: "preview", label: "Preview", icon: Eye },
+        ].map(({ id, label, icon: Icon, hideOnMobile }) => {
+          if (hideOnMobile && isMobile) return null;
+          return (
             <button
               key={id}
-              onClick={() => setActiveTab(id as "edit" | "preview")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
+              onClick={() => setActiveTab(id as any)}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
                 activeTab === id
                   ? "bg-white text-gray-900 shadow-sm"
                   : "text-gray-500 hover:text-gray-700"
@@ -133,16 +133,16 @@ export const SDSPreviewPanel = ({ data }: { data: SDSData }) => {
               <Icon size={14} />
               <span>{label}</span>
             </button>
-          ))}
-        </div>
-      )}
+          );
+        })}
+      </div>
 
       {/* Content Area */}
-      <div className={`flex ${isMobile ? "flex-col" : "flex-row"} gap-4`}>
+      <div className="flex flex-col lg:flex-row gap-4">
         {/* Editor */}
-        {(!isMobile || activeTab === "edit") && (
-          <div className={`${isMobile ? "w-full" : "w-1/2"} flex flex-col`}>
-            <div className="bg-white rounded-2xl border border-gray-200/60 shadow-sm overflow-hidden flex flex-col h-[500px] lg:h-[calc(100vh-320px)]">
+        {(activeTab === "split" || activeTab === "edit") && (
+          <div className={`${activeTab === "edit" ? "w-full" : "w-full lg:w-1/2"} flex flex-col transition-all duration-300`}>
+            <div className="bg-white rounded-2xl border border-gray-200/60 shadow-sm overflow-hidden flex flex-col h-[600px] lg:h-[calc(100vh-280px)]">
               {/* Editor Header */}
               <div className="flex items-center justify-between px-4 py-3 bg-gray-50/80 border-b border-gray-100">
                 <div className="flex items-center gap-2">
@@ -171,9 +171,9 @@ export const SDSPreviewPanel = ({ data }: { data: SDSData }) => {
         )}
 
         {/* Preview */}
-        {(!isMobile || activeTab === "preview") && (
-          <div className={`${isMobile ? "w-full" : "w-1/2"} flex flex-col`}>
-            <div className="bg-white rounded-2xl border border-gray-200/60 shadow-sm overflow-hidden flex flex-col h-[500px] lg:h-[calc(100vh-320px)]">
+        {(activeTab === "split" || activeTab === "preview") && (
+          <div className={`${activeTab === "preview" ? "w-full" : "w-full lg:w-1/2"} flex flex-col transition-all duration-300`}>
+            <div className="bg-white rounded-2xl border border-gray-200/60 shadow-sm overflow-hidden flex flex-col h-[600px] lg:h-[calc(100vh-280px)]">
               {/* Preview Header */}
               <div className="flex items-center justify-between px-4 py-3 bg-gray-50/80 border-b border-gray-100">
                 <div className="flex items-center gap-2">
