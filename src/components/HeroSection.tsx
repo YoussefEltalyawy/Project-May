@@ -9,9 +9,9 @@ interface HeroSectionProps {
 
 export function HeroSection({ onSelectTerm, isLoading, isCentered = false }: HeroSectionProps) {
   return (
-    <section className={`relative transition-all duration-700 ease-in-out flex flex-col ${isCentered ? "flex-1 justify-center pt-10 pb-0" : "pt-32 pb-10 sm:pt-36 sm:pb-12"}`}>
+    <section className={`relative transition-all duration-700 ease-in-out flex flex-col overflow-x-hidden ${isCentered ? "flex-1 justify-center pt-10 pb-0" : "pt-32 pb-10 sm:pt-36 sm:pb-12"}`}>
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 text-center">
-        <h1 className="text-[2.25rem] leading-[1.1] sm:text-6xl lg:text-7xl font-bold tracking-tight mb-5 sm:mb-6 animate-fade-up font-serif max-w-full md:whitespace-nowrap">
+        <h1 className="text-[2.25rem] leading-[1.1] sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-5 sm:mb-6 animate-fade-up font-serif">
           <span className="text-brand-text block sm:inline">Standardized SDS.</span>{" "}
           <span className="text-brand-text italic block sm:inline">One Search Away.</span>
         </h1>
@@ -19,7 +19,7 @@ export function HeroSection({ onSelectTerm, isLoading, isCentered = false }: Her
         {/* Subheadline */}
         <p className="text-sm sm:text-lg md:text-xl text-brand-text-muted max-w-2xl mx-auto leading-relaxed mb-8 sm:mb-10 animate-fade-up delay-2">
           Instant GHS compliance and ICSC-standardized sheets powered by
-          real-time chemical informatics. Built for the modern laboratory.
+          real-time chemical informatics.
         </p>
 
         {/* Search */}
@@ -40,7 +40,7 @@ export function HeroSection({ onSelectTerm, isLoading, isCentered = false }: Her
       {/* Teal globe — Image for desktop only (sm and up) */}
       <div
         aria-hidden
-        className="pointer-events-none fixed bottom-0 left-1/2 -translate-x-1/2 flex justify-center translate-y-[35%] hidden sm:flex min-w-[1600px] w-[180vw] max-w-[2800px] z-0"
+        className="pointer-events-none fixed bottom-0 left-1/2 -translate-x-1/2 flex justify-center translate-y-[35%] hidden sm:flex w-[180vw] md:w-[160vw] lg:w-[140vw] max-w-[2800px] z-0"
       >
         <Image
           src="/hero-glob.webp"

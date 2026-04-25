@@ -19,10 +19,9 @@ function GithubIcon({ size = 18, className }: { size?: number; className?: strin
 
 export function SiteNav() {
   return (
-    <nav className="fixed top-4 md:top-8 left-1/2 -translate-x-1/2 z-50">
-      <div className="flex items-center gap-3 md:gap-5 px-4 py-2 md:px-6 md:py-3 rounded-full border border-accent bg-white/85 backdrop-blur-md shadow-sm">
-        {/* Brand */}
-        <div className="flex items-center gap-2.5">
+   <nav className="fixed top-6 md:top-8 left-1/2 -translate-x-1/2 z-50 w-max max-w-[calc(100vw-2rem)]">
+      <div className="flex items-center gap-3 md:gap-5 px-4 py-2.5 md:px-6 md:py-3 rounded-full border border-accent bg-white/85 backdrop-blur-md shadow-sm w-max">
+        <div className="flex items-center gap-2">
           <Image
             src="/project-may-logo.png"
             alt="Project May logo"
@@ -34,7 +33,7 @@ export function SiteNav() {
         </div>
 
         {/* Vertical divider */}
-        <span className="w-px h-4 md:h-5 bg-gray-300" aria-hidden />
+        <span className="w-px h-4 md:h-5 bg-gray-300 self-center mx-0.5 md:mx-0" aria-hidden />
 
         {/* GitHub link */}
         <a
