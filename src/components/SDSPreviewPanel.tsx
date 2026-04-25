@@ -132,19 +132,16 @@ export const SDSPreviewPanel = ({ data, onClear }: SDSPreviewPanelProps) => {
           </div>
         </div>
 
-        {/* Export button - full width on mobile */}
-        <div className="w-full sm:w-auto sm:hidden">
-          <PDFExportButton key={`export-${debouncedData.cid}`} data={debouncedData} fullWidth />
-        </div>
       </div>
 
-      {/* Export button - inline on desktop */}
-      <div className="hidden sm:flex items-center gap-1">
-        <PDFExportButton key={`export-${debouncedData.cid}`} data={debouncedData} />
+      {/* Mobile: Sticky export button at top with safe area */}
+      <div className="sticky top-0 z-30 sm:hidden -mx-4 px-4" style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top))' }}>
+        <PDFExportButton key={`export-mobile-${debouncedData.cid}`} data={debouncedData} fullWidth />
       </div>
 
-      {/* ── View switcher ── */}
-      <div className="flex p-1 bg-gray-100 rounded-xl max-w-sm">
+      {/* ── View switcher + Desktop Export ── */}
+      <div className="flex items-center gap-3">
+        <div className="flex p-1 bg-gray-100 rounded-xl max-w-sm">
         {tabs.map(({ id, label, icon: Icon, hideOnMobile }) => {
           if (hideOnMobile && isMobile) return null;
           return (
@@ -163,6 +160,12 @@ export const SDSPreviewPanel = ({ data, onClear }: SDSPreviewPanelProps) => {
             </button>
           );
         })}
+      </div>
+
+        {/* Desktop Export button - takes remaining width */}
+        <div className="hidden sm:flex flex-1 justify-end">
+          <PDFExportButton key={`export-desktop-${debouncedData.cid}`} data={debouncedData} />
+        </div>
       </div>
 
       {/* ── Content area ── */}

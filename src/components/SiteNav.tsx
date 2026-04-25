@@ -19,7 +19,7 @@ function GithubIcon({ size = 18, className }: { size?: number; className?: strin
 
 export function SiteNav() {
   return (
-   <nav className="fixed top-6 md:top-8 left-1/2 -translate-x-1/2 z-50 w-max max-w-[calc(100vw-2rem)]">
+   <nav className="w-max max-w-[calc(100vw-2rem)] mt-[max(1.5rem,env(safe-area-inset-top))] md:mt-[max(2rem,env(safe-area-inset-top))] mx-auto">
       <div className="flex items-center gap-3 md:gap-5 px-4 py-2.5 md:px-6 md:py-3 rounded-full border border-accent bg-white/85 backdrop-blur-md shadow-sm w-max">
         <div className="flex items-center gap-2">
           <Image

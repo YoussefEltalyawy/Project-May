@@ -9,7 +9,7 @@ interface HeroSectionProps {
 
 export function HeroSection({ onSelectTerm, isLoading, isCentered = false }: HeroSectionProps) {
   return (
-    <section className={`relative transition-all duration-700 ease-in-out flex flex-col overflow-x-hidden ${isCentered ? "flex-1 justify-center pt-10 pb-0" : "pt-32 pb-10 sm:pt-36 sm:pb-12"}`}>
+    <section className={`relative transition-all duration-700 ease-in-out flex flex-col overflow-x-hidden ${isCentered ? "flex-1 justify-center pb-0" : "pt-30 pb-10 sm:pt-36 sm:pb-12"}`}>
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 text-center">
         <h1 className="text-[2.25rem] leading-[1.1] sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-5 sm:mb-6 animate-fade-up font-serif">
           <span className="text-brand-text block sm:inline">Standardized SDS.</span>{" "}
