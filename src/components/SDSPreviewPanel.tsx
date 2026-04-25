@@ -69,7 +69,11 @@ export const SDSPreviewPanel = ({ data, onClear }: SDSPreviewPanelProps) => {
   useEffect(() => setEditedData(data), [data]);
 
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 1024;
+      setIsMobile(mobile);
+      if (mobile) setActiveTab(prev => prev === "split" ? "preview" : prev);
+    };
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
@@ -79,55 +83,57 @@ export const SDSPreviewPanel = ({ data, onClear }: SDSPreviewPanelProps) => {
 
   const tabs: Array<{ id: string; label: string; icon: React.ElementType; hideOnMobile?: boolean }> = [
     { id: "split", label: "Split", icon: FileText, hideOnMobile: true },
-    { id: "edit", label: "Edit", icon: Pencil },
     { id: "preview", label: "Preview", icon: Eye },
+    { id: "edit", label: "Edit", icon: Pencil },
   ];
 
   return (
     <div className="w-full space-y-5">
-      {/* ── Compound info card ── */}
-      <div className="bg-brand-surface rounded-2xl border border-brand-border p-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          {/* Left: identity */}
-          <div className="flex items-center gap-4 min-w-0">
-            <div className="w-11 h-11 shrink-0 rounded-xl bg-accent/10 flex items-center justify-center">
-              <FileText size={20} className="text-accent" />
-            </div>
-            <div className="min-w-0">
-              <h2 className="text-lg font-bold text-brand-text truncate">
-                {editedData?.identity?.name || "Chemical Compound"}
-              </h2>
+      {/* ── Compound info bar ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
+        {/* Identity */}
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold text-brand-text truncate leading-tight">
+              {editedData?.identity?.name || "Chemical Compound"}
+            </h2>
+            <div className="flex items-center gap-2 mt-0.5">
               {editedData.identity.formula && (
-                <span className="inline-block font-mono text-xs text-brand-text-muted bg-gray-100 px-2 py-0.5 rounded-md mt-0.5">
+                <span className="font-mono text-xs text-brand-text-muted">
                   <ChemicalFormulaHtml formula={editedData.identity.formula} />
                 </span>
               )}
+              <span className="text-xs text-brand-text-muted/60">CID: {editedData.cid}</span>
             </div>
           </div>
+        </div>
 
-          {/* Right: actions */}
-          <div className="flex items-center gap-2 shrink-0">
-            <a
-              href={`https://pubchem.ncbi.nlm.nih.gov/compound/${editedData.cid}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-3 py-2 text-sm text-brand-text-muted hover:text-accent hover:bg-accent/5 rounded-lg transition-colors"
-            >
-              <ExternalLink size={14} />
-              <span className="hidden sm:inline">PubChem</span>
-            </a>
-            <PDFExportButton key={`export-${debouncedData.cid}`} data={debouncedData} />
-            {onClear && (
+        {/* Actions */}
+        <div className="flex items-center gap-1 shrink-0">
+          <a
+            href={`https://pubchem.ncbi.nlm.nih.gov/compound/${editedData.cid}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-brand-text-muted hover:text-accent hover:bg-accent/5 rounded-full transition-colors"
+          >
+            <ExternalLink size={14} />
+            <span className="hidden md:inline">PubChem</span>
+          </a>
+          <div className="w-px h-4 bg-brand-border mx-1" />
+          <PDFExportButton key={`export-${debouncedData.cid}`} data={debouncedData} />
+          {onClear && (
+            <>
+              <div className="w-px h-4 bg-brand-border mx-1" />
               <button
                 onClick={onClear}
-                className="flex items-center gap-1.5 px-3 py-2 text-sm text-brand-text-muted hover:text-secondary hover:bg-secondary/5 rounded-lg transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-brand-text-muted hover:text-secondary hover:bg-secondary/5 rounded-full transition-colors"
                 title="Clear results"
               >
                 <X size={14} />
-                <span className="hidden sm:inline">Clear</span>
+                <span className="hidden md:inline">Clear</span>
               </button>
-            )}
-          </div>
+            </>
+          )}
         </div>
       </div>
 
