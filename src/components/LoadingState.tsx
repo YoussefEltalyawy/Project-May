@@ -26,21 +26,21 @@ export function LoadingState({ progress, loadingStep }: LoadingStateProps) {
           />
         </div>
 
-        <div className="p-8 sm:p-10">
-          <div className="flex items-center gap-6">
+        <div className="p-5 sm:p-8 md:p-10">
+          <div className="flex items-center gap-4 sm:gap-6">
             {/* Animated icon */}
             <div className="relative shrink-0">
-              <div className="w-16 h-16 rounded-2xl bg-accent-light flex items-center justify-center">
-                <CurrentIcon size={28} className="text-accent" />
+              <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-xl sm:rounded-2xl bg-accent-light flex items-center justify-center">
+                <CurrentIcon size={22} className="text-accent sm:w-6 sm:h-6 md:w-7 md:h-7" />
               </div>
-              <div className="absolute inset-0 rounded-2xl ring-2 ring-secondary/30 animate-pulse-ring" />
+              <div className="absolute inset-0 rounded-xl sm:rounded-2xl ring-2 ring-secondary/30 animate-pulse-ring" />
             </div>
 
             <div className="flex-1 min-w-0">
-              <h3 className="text-lg font-semibold text-brand-text mb-1">
+              <h3 className="text-base sm:text-lg font-semibold text-brand-text mb-1">
                 {LOADING_STEPS[loadingStep]?.label}
               </h3>
-              <p className="text-sm text-brand-text-muted mb-4">
+              <p className="text-xs sm:text-sm text-brand-text-muted mb-3 sm:mb-4">
                 {Math.round(progress)}% complete
               </p>
 
@@ -54,13 +54,13 @@ export function LoadingState({ progress, loadingStep }: LoadingStateProps) {
                     <div
                       key={step.label}
                       className={[
-                        "flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all duration-300",
+                        "flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-medium transition-all duration-300",
                         isActive ? "bg-accent-light text-accent-dark"
                           : isDone  ? "bg-secondary/10 text-secondary"
                           : "bg-gray-100 text-gray-400",
                       ].join(" ")}
                     >
-                      <Icon size={12} />
+                      <Icon size={10} className="sm:w-3 sm:h-3" />
                       <span className="hidden sm:inline">{step.label}</span>
                     </div>
                   );
@@ -71,8 +71,8 @@ export function LoadingState({ progress, loadingStep }: LoadingStateProps) {
         </div>
 
         {/* Skeleton */}
-        <div className="px-8 pb-8">
-          <div className="skeleton h-32 w-full rounded-xl" />
+        <div className="px-5 sm:px-8 pb-5 sm:pb-8">
+          <div className="skeleton h-24 sm:h-32 w-full rounded-lg sm:rounded-xl" />
         </div>
       </div>
     </div>

@@ -130,18 +130,18 @@ export const CompoundSearch = ({ onSelectTerm, isLoading }: CompoundSearchProps)
       <div ref={wrapRef} className="relative z-50">
         {/* Search Input Container */}
         <div
-          className={`relative z-50 flex items-center bg-white rounded-2xl border transition-all duration-200 ${
+          className={`relative z-50 flex items-center bg-white rounded-xl sm:rounded-2xl border transition-all duration-200 ${
             open && hasDropdown
               ? "border-accent/30 ring-4 ring-accent/10 shadow-xl shadow-accent/10"
               : "border-brand-border shadow-lg shadow-gray-200/50 hover:border-gray-300"
           }`}
         >
           {/* Search Icon */}
-          <div className="pl-5 pr-3">
+          <div className="pl-4 sm:pl-5 pr-2 sm:pr-3">
             {isLoading || fetchingSuggest ? (
-              <Loader2 size={20} className="text-secondary shrink-0 animate-spin" />
+              <Loader2 size={18} className="text-secondary shrink-0 animate-spin sm:w-5 sm:h-5" />
             ) : (
-              <Search size={20} className="text-gray-400 shrink-0" />
+              <Search size={18} className="text-gray-400 shrink-0 sm:w-5 sm:h-5" />
             )}
           </div>
 
@@ -165,7 +165,7 @@ export const CompoundSearch = ({ onSelectTerm, isLoading }: CompoundSearchProps)
             }}
             onKeyDown={handleKeyDown}
             placeholder="Search for a chemical compound..."
-            className="flex-1 py-4 bg-transparent text-brand-text placeholder-gray-400 text-base outline-none"
+            className="flex-1 py-3 sm:py-4 bg-transparent text-brand-text placeholder-gray-400 text-sm sm:text-base outline-none"
             autoComplete="off"
             spellCheck={false}
           />
@@ -177,25 +177,25 @@ export const CompoundSearch = ({ onSelectTerm, isLoading }: CompoundSearchProps)
               <button
                 type="button"
                 onClick={handleClear}
-                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                <X size={16} />
+                <X size={14} className="sm:w-4 sm:h-4" />
               </button>
             )}
 
             {/* Divider */}
-            <div className="w-px h-6 bg-gray-200" />
+            <div className="w-px h-5 sm:h-6 bg-gray-200" />
 
             {/* Submit button */}
             <button
               type="submit"
               disabled={isLoading || text.trim().length < 2}
               className="flex items-center gap-2 bg-secondary/10 text-secondary border border-secondary/30
-                         text-sm font-medium px-4 py-2 rounded-xl hover:bg-secondary/20
+                         text-xs sm:text-sm font-medium px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl hover:bg-secondary/20
                          active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <span className="hidden sm:inline">{isLoading ? "Loading..." : "Search"}</span>
-              <ChevronRight size={16} className="sm:hidden" />
+              <ChevronRight size={14} className="sm:hidden" />
             </button>
           </div>
         </div>
@@ -220,7 +220,7 @@ export const CompoundSearch = ({ onSelectTerm, isLoading }: CompoundSearchProps)
               <li key={s}>
                 <button
                   type="button"
-                  className={`w-full text-left px-4 py-3 text-sm transition-colors flex items-center gap-3 ${
+                  className={`w-full text-left px-4 py-2.5 sm:py-3 text-sm transition-colors flex items-center gap-3 ${
                     idx === highlightedIndex
                       ? "bg-secondary/10 text-secondary"
                       : "text-brand-text-muted hover:bg-gray-50"
@@ -239,11 +239,11 @@ export const CompoundSearch = ({ onSelectTerm, isLoading }: CompoundSearchProps)
       </div>
 
       {/* Helper text */}
-      <div className="flex items-center justify-center mt-5">
-        <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-4 px-5 py-2.5 bg-white/70 backdrop-blur-md border border-gray-200 rounded-full shadow-sm text-xs font-medium">
-          <p className="text-brand-text-muted flex items-center gap-2 tracking-tight">
+      <div className="flex items-center justify-center mt-4 sm:mt-5">
+        <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-4 px-4 sm:px-5 py-2 sm:py-2.5 bg-white/70 backdrop-blur-md border border-gray-200 rounded-full shadow-sm text-[11px] sm:text-xs font-medium">
+          <p className="text-brand-text-muted flex items-center gap-1.5 sm:gap-2 tracking-tight">
             <span className="hidden sm:inline">Press</span>
-            <kbd className="px-2 py-1 bg-white border border-gray-200/80 rounded-md text-brand-text font-black text-[10px] shadow-sm leading-none flex items-center justify-center min-w-[20px]">
+            <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-white border border-gray-200/80 rounded-md text-brand-text font-black text-[9px] sm:text-[10px] shadow-sm leading-none flex items-center justify-center min-w-[18px] sm:min-w-[20px]">
               /
             </kbd>
             <span>to search</span>

@@ -17,7 +17,7 @@ export function HeroSection({ onSelectTerm, isLoading, isCentered = false }: Her
         </h1>
 
         {/* Subheadline */}
-        <p className="text-lg sm:text-xl text-brand-text-muted max-w-2xl mx-auto leading-relaxed mb-10 animate-fade-up delay-2">
+        <p className="text-sm sm:text-lg md:text-xl text-brand-text-muted max-w-2xl mx-auto leading-relaxed mb-8 sm:mb-10 animate-fade-up delay-2">
           Instant GHS compliance and ICSC-standardized sheets powered by
           real-time chemical informatics. Built for the modern laboratory.
         </p>
