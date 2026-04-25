@@ -64,7 +64,7 @@ export function SearchHistory({ onSelect, isVisible, onClose }: SearchHistoryPro
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-gray-50/80 border-b border-gray-100">
         <div className="flex items-center gap-2 text-sm text-gray-600">
-          <History size={14} className="text-amber-500" />
+          <History size={14} className="text-[#DE7263]" />
           <span className="font-medium">Recent Searches</span>
         </div>
         <div className="flex items-center gap-1">
@@ -92,7 +92,7 @@ export function SearchHistory({ onSelect, isVisible, onClose }: SearchHistoryPro
         {isLoading ? (
           <li className="px-4 py-8 text-sm text-gray-400 text-center">
             <div className="flex flex-col items-center gap-2">
-              <div className="w-5 h-5 border-2 border-gray-200 border-t-amber-500 rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-gray-200 border-t-[#DE7263] rounded-full animate-spin" />
               <span>Loading history...</span>
             </div>
           </li>
@@ -117,13 +117,13 @@ export function SearchHistory({ onSelect, isVisible, onClose }: SearchHistoryPro
             .map((item) => (
             <li 
               key={item.id} 
-              className="group flex items-center gap-3 px-4 py-3 hover:bg-amber-50/50 transition-colors cursor-pointer"
+              className="group flex items-center gap-3 px-4 py-3 hover:bg-[#0D9488]/5 transition-colors cursor-pointer"
               onClick={() => handleSelect(item.term)}
             >
               <Clock size={14} className="text-gray-400 shrink-0" />
               
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-800 truncate">
+              <div className="flex-1 min-w-0 text-left">
+                <p className="text-sm font-medium text-brand-text truncate">
                   {item.name || item.term}
                 </p>
                 <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">

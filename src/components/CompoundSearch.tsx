@@ -132,14 +132,14 @@ export const CompoundSearch = ({ onSelectTerm, isLoading }: CompoundSearchProps)
         <div
           className={`relative z-50 flex items-center bg-white rounded-2xl border transition-all duration-200 ${
             open && hasDropdown
-              ? "border-amber-300 ring-4 ring-amber-500/10 shadow-xl shadow-amber-500/10"
-              : "border-gray-200 shadow-lg shadow-gray-200/50 hover:border-gray-300"
+              ? "border-accent/30 ring-4 ring-accent/10 shadow-xl shadow-accent/10"
+              : "border-brand-border shadow-lg shadow-gray-200/50 hover:border-gray-300"
           }`}
         >
           {/* Search Icon */}
           <div className="pl-5 pr-3">
             {isLoading || fetchingSuggest ? (
-              <Loader2 size={20} className="text-amber-500 shrink-0 animate-spin" />
+              <Loader2 size={20} className="text-secondary shrink-0 animate-spin" />
             ) : (
               <Search size={20} className="text-gray-400 shrink-0" />
             )}
@@ -165,7 +165,7 @@ export const CompoundSearch = ({ onSelectTerm, isLoading }: CompoundSearchProps)
             }}
             onKeyDown={handleKeyDown}
             placeholder="Search for a chemical compound..."
-            className="flex-1 py-4 bg-transparent text-gray-900 placeholder-gray-400 text-base outline-none"
+            className="flex-1 py-4 bg-transparent text-brand-text placeholder-gray-400 text-base outline-none"
             autoComplete="off"
             spellCheck={false}
           />
@@ -190,8 +190,9 @@ export const CompoundSearch = ({ onSelectTerm, isLoading }: CompoundSearchProps)
             <button
               type="submit"
               disabled={isLoading || text.trim().length < 2}
-              className="flex items-center gap-2 bg-gray-900 text-white text-sm font-medium px-4 py-2 rounded-xl
-                         hover:bg-gray-800 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 bg-secondary/10 text-secondary border border-secondary/30
+                         text-sm font-medium px-4 py-2 rounded-xl hover:bg-secondary/20
+                         active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <span className="hidden sm:inline">{isLoading ? "Loading..." : "Search"}</span>
               <ChevronRight size={16} className="sm:hidden" />
@@ -221,8 +222,8 @@ export const CompoundSearch = ({ onSelectTerm, isLoading }: CompoundSearchProps)
                   type="button"
                   className={`w-full text-left px-4 py-3 text-sm transition-colors flex items-center gap-3 ${
                     idx === highlightedIndex
-                      ? "bg-amber-50 text-amber-900"
-                      : "text-gray-700 hover:bg-gray-50"
+                      ? "bg-secondary/10 text-secondary"
+                      : "text-brand-text-muted hover:bg-gray-50"
                   }`}
                   onMouseDown={(e) => e.preventDefault()}
                   onMouseEnter={() => setHighlightedIndex(idx)}
