@@ -1,18 +1,19 @@
+import Image from "next/image";
 import { CompoundSearch } from "@/components/CompoundSearch";
 
 interface HeroSectionProps {
   onSelectTerm: (term: string) => void;
   isLoading: boolean;
+  isCentered?: boolean;
 }
 
-export function HeroSection({ onSelectTerm, isLoading }: HeroSectionProps) {
+export function HeroSection({ onSelectTerm, isLoading, isCentered = false }: HeroSectionProps) {
   return (
-    <section className="relative pt-36 pb-16 sm:pt-44 sm:pb-20">
-      <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 text-center">
-        {/* Headline */}
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6 animate-fade-up whitespace-nowrap font-serif">
-          <span className="text-brand-text">Standardized SDS.</span>{" "}
-          <span className="text-brand-text italic">One Search Away.</span>
+    <section className={`relative transition-all duration-700 ease-in-out flex flex-col ${isCentered ? "flex-1 justify-center pt-10 pb-0" : "pt-32 pb-10 sm:pt-36 sm:pb-12"}`}>
+      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 text-center">
+        <h1 className="text-[2.25rem] leading-[1.1] sm:text-6xl lg:text-7xl font-bold tracking-tight mb-5 sm:mb-6 animate-fade-up font-serif max-w-full md:whitespace-nowrap">
+          <span className="text-brand-text block sm:inline">Standardized SDS.</span>{" "}
+          <span className="text-brand-text italic block sm:inline">One Search Away.</span>
         </h1>
 
         {/* Subheadline */}
@@ -27,13 +28,29 @@ export function HeroSection({ onSelectTerm, isLoading }: HeroSectionProps) {
         </div>
       </div>
 
-      {/* Teal globe — wide, soft, circular, positioned at the very bottom of the viewport area */}
+      {/* Teal globe — Pure CSS for mobile only (< sm) */}
       <div
         aria-hidden
-        className="pointer-events-none absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-[60%] w-[900px] h-[900px]"
+        className="pointer-events-none fixed bottom-0 left-1/2 -translate-x-1/2 translate-y-[45%] w-[1200px] h-[1200px] sm:hidden z-0"
       >
-        <div className="absolute inset-0 rounded-full bg-accent/[0.04] blur-3xl" />
-        <div className="absolute inset-[20%] rounded-full bg-accent/[0.06] blur-3xl" />
+        <div className="absolute inset-0 rounded-full bg-accent/[0.08] blur-[80px]" />
+        <div className="absolute inset-[20%] rounded-full bg-accent/[0.12] blur-[80px]" />
+      </div>
+
+      {/* Teal globe — Image for desktop only (sm and up) */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed bottom-0 left-1/2 -translate-x-1/2 flex justify-center translate-y-[35%] hidden sm:flex min-w-[1600px] w-[180vw] max-w-[2800px] z-0"
+      >
+        <Image
+          src="/hero-glob.webp"
+          alt="Glowing teal background texture"
+          width={2400}
+          height={1200}
+          className="w-full h-auto object-cover opacity-100"
+          priority
+          unoptimized
+        />
       </div>
     </section>
   );

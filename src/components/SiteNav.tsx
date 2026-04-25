@@ -18,7 +18,7 @@ function GithubIcon({ size = 18 }: { size?: number }) {
 
 export function SiteNav() {
   return (
-    <nav className="fixed top-5 left-1/2 -translate-x-1/2 z-50">
+    <nav className="fixed top-8 left-1/2 -translate-x-1/2 z-50">
       <div className="flex items-center gap-4 px-5 py-2.5 rounded-full border border-accent bg-white/85 backdrop-blur-md shadow-sm">
         {/* Brand */}
         <div className="flex items-center gap-2.5">

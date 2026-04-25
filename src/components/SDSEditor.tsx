@@ -124,17 +124,17 @@ export const SDSEditor = ({ data, onChange }: SDSEditorProps) => {
           <SectionCardHeader accentBar>
             <span className="block text-sm font-bold text-brand-text">General Setup</span>
           </SectionCardHeader>
-          <div className="space-y-1.5 mt-3">
-            <span className="text-[11px] font-bold text-brand-text-muted uppercase tracking-wider">
+          <div className="flex flex-col gap-2 mt-4">
+            <label htmlFor="preparedBy" className="text-[11px] font-bold text-brand-text-muted uppercase tracking-wider block">
               Document Attribution
-            </span>
+            </label>
             <input
               id="preparedBy"
               type="text"
               value={data.preparedBy || ""}
               onChange={(e) => onChange({ ...data, preparedBy: e.target.value })}
               placeholder="e.g. Chemist Maysa Ahmed"
-              className="editor-input"
+              className="editor-input w-full block"
             />
             {!data.preparedBy && (
               <p className="text-[10px] text-accent flex items-center gap-1.5 font-medium">
@@ -226,7 +226,7 @@ export const SDSEditor = ({ data, onChange }: SDSEditorProps) => {
               value={value}
               onChange={(e) => handleTextChange(key, e.target.value)}
               placeholder={`Enter details for ${label.toLowerCase()}…`}
-              className={`editor-textarea mt-3 ${isFocused ? "min-h-[450px]" : "min-h-[140px]"}`}
+              className={`editor-textarea block w-full mt-3 ${isFocused ? "min-h-[450px]" : "min-h-[140px]"}`}
             />
             <div className="mt-2 flex justify-between items-center text-[10px] text-gray-400 font-medium px-1">
               <span>Supports multiline text</span>
@@ -268,7 +268,7 @@ export const SDSEditor = ({ data, onChange }: SDSEditorProps) => {
             onChange={(e) => onChange({ ...data, arabicWarning: e.target.value })}
             dir="rtl"
             placeholder="تحذير السلامة بالعربية..."
-            className={`editor-textarea text-lg font-bold ${
+            className={`editor-textarea block w-full text-lg font-bold ${
               focusedSection === "arabic" ? "min-h-[450px]" : "min-h-[160px]"
             }`}
             style={{ fontFamily: "Cairo, sans-serif" }}

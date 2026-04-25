@@ -239,16 +239,20 @@ export const CompoundSearch = ({ onSelectTerm, isLoading }: CompoundSearchProps)
       </div>
 
       {/* Helper text */}
-      <div className="flex items-center justify-center gap-4 mt-3">
-        <p className="text-xs text-gray-400 flex items-center gap-1.5">
-          <span className="hidden sm:inline">Press</span>
-          <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-200 rounded text-gray-500 font-sans text-[10px]">/</kbd>
-          <span>to search</span>
-        </p>
-        <span className="text-gray-300">·</span>
-        <p className="text-xs text-gray-400">
-          {fetchingSuggest ? "Loading suggestions..." : "Type to see suggestions"}
-        </p>
+      <div className="flex items-center justify-center mt-5">
+        <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-4 px-5 py-2.5 bg-white/70 backdrop-blur-md border border-gray-200 rounded-full shadow-sm text-xs font-medium">
+          <p className="text-brand-text-muted flex items-center gap-2 tracking-tight">
+            <span className="hidden sm:inline">Press</span>
+            <kbd className="px-2 py-1 bg-white border border-gray-200/80 rounded-md text-brand-text font-black text-[10px] shadow-sm leading-none flex items-center justify-center min-w-[20px]">
+              /
+            </kbd>
+            <span>to search</span>
+          </p>
+          <span className="text-gray-300 hidden sm:inline">·</span>
+          <p className="text-brand-text-muted px-1">
+            {fetchingSuggest ? "Loading suggestions…" : "Type to see suggestions"}
+          </p>
+        </div>
       </div>
     </form>
   );

@@ -117,7 +117,7 @@ export function SearchHistory({ onSelect, isVisible, onClose }: SearchHistoryPro
             .map((item) => (
             <li 
               key={item.id} 
-              className="group flex items-center gap-3 px-4 py-3 hover:bg-[#0D9488]/5 transition-colors cursor-pointer"
+              className="group flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer"
               onClick={() => handleSelect(item.term)}
             >
               <Clock size={14} className="text-gray-400 shrink-0" />

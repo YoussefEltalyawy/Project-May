@@ -133,6 +133,7 @@ body {
 
 /* ─── Editor form elements ───────────────────────────────────────────────── */
 .editor-input {
+  display: block;
   width: 100%;
   padding: 0.625rem 1rem;
   font-size: 0.875rem;
@@ -144,8 +145,8 @@ body {
 }
 .editor-input:focus {
   outline: none;
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.08);
+  border-color: var(--color-secondary);
+  box-shadow: 0 0 0 3px rgba(222, 114, 99, 0.1);
   background: white;
 }
 .editor-input:hover {
@@ -153,6 +154,7 @@ body {
 }
 
 .editor-textarea {
+  display: block;
   width: 100%;
   padding: 1rem;
   font-size: 0.9375rem;
@@ -166,8 +168,8 @@ body {
 }
 .editor-textarea:focus {
   outline: none;
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.08);
+  border-color: var(--color-secondary);
+  box-shadow: 0 0 0 3px rgba(222, 114, 99, 0.1);
   background: white;
 }
 .editor-textarea:hover {
