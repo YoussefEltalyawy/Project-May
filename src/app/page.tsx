@@ -2,12 +2,13 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { fetchFullSDSByCid, getCIDByName, SDSData } from "@/lib/pubchem";
-import { getCachedSDS, setCachedSDS, addSearchHistory } from "@/lib/cache";
+import { getCachedSDS, setCachedSDS, addSearchHistory, migrateFromLocalStorage } from "@/lib/cache";
 import { SiteNav } from "@/components/SiteNav";
 import { HeroSection } from "@/components/HeroSection";
 import { LoadingState, LOADING_STEPS } from "@/components/LoadingState";
 import { ErrorState } from "@/components/ErrorState";
 import { ResultsSection } from "@/components/ResultsSection";
+import { runFormulaMigration } from "@/lib/migrations/fixFormulas";
 
 // ─── Data fetching logic ─────────────────────────────────────────────────────
 
@@ -30,6 +31,22 @@ export default function Home() {
   const [progress, setProgress]       = useState(0);
   const [error, setError]             = useState<string | null>(null);
   const mainRef                        = useRef<HTMLDivElement>(null);
+
+  // Run one-time migrations on startup
+  useEffect(() => {
+    const MIGRATION_KEY = "project-may-formula-migration-v2";
+    if (!localStorage.getItem(MIGRATION_KEY)) {
+      // Migrate localStorage → IndexedDB first, then fix formulas
+      migrateFromLocalStorage()
+        .then(() => runFormulaMigration())
+        .then((result) => {
+          if (result.success) {
+            localStorage.setItem(MIGRATION_KEY, "done");
+          }
+        })
+        .catch(() => {});
+    }
+  }, []);
 
   // Scroll to results when data loads
   useEffect(() => {

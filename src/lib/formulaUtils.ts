@@ -10,8 +10,12 @@
  * - "ClH" → "HCl" (hydrochloric acid)
  * - "H3N" → "NH3" (ammonia - central atom first)
  * - "NaCl" → "NaCl" (sodium chloride, no change)
- * - "FH" → "HF" (hydrogen fluoride - central atom first)
+ * - "FH" → "HF" (hydrogen fluoride)
  * - "ClK" → "KCl" (potassium chloride - metal first)
+ * - "HNaO" → "NaHO" (sodium hydroxide - metal first)
+ * - "K2O4S" → "K2SO4" (potassium sulfate - metal first)
+ * - "H2Se" → "H2Se" (hydrogen selenide - H first)
+ * - "BrH" → "HBr" (hydrogen bromide - H first)
  */
 
 // Set of metal elements for ionic compound ordering (metal first)
@@ -31,6 +35,15 @@ const METAL_ELEMENTS = new Set([
   "La", "Ce", "Pr", "Nd", "Pm", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho", "Er", "Tm", "Yb", "Lu",
   // Actinides
   "Ac", "Th", "Pa", "U", "Np", "Pu", "Am", "Cm", "Bk", "Cf", "Es", "Fm", "Md", "No", "Lr",
+]);
+
+// Elements that form acids with H — in binary compounds, H comes FIRST
+// Group 16-17: HCl, HBr, HI, HF, H2S, H2O, H2Se, H2Te
+const ACID_ANION_ELEMENTS = new Set([
+  // Group 16 (chalcogens)
+  "O", "S", "Se", "Te", "Po",
+  // Group 17 (halogens)
+  "F", "Cl", "Br", "I", "At",
 ]);
 
 function isMetal(element: string): boolean {
@@ -53,41 +66,79 @@ export function reorderFormula(formula: string): string {
 
   if (elements.size === 0) return formula;
 
-  // If formula contains Carbon, it's likely organic - keep Hill notation (C first)
-  if (elements.has("C")) {
-    return formula;
-  }
-
-  // Inorganic compounds - need smart reordering
   const elementList = Array.from(elements.entries());
   const hasH = elements.has("H");
   const hasO = elements.has("O");
+  const hasC = elements.has("C");
   const hCount = elements.get("H") || 0;
+  const hasMetal = elementList.some(([el]) => isMetal(el));
 
-  // Binary compounds with H (like NH3, PH3, HF, HCl)
-  // Central atom (more electronegative or larger) comes first, H last
+  // ─── Organic compounds (C present, no metal): keep Hill notation ───
+  // Hill notation IS the conventional notation for organic compounds
+  if (hasC && !hasMetal) {
+    return formula;
+  }
+
+  // ─── Ionic compounds (contain a metal): metal first ───
+  // Handles: NaCl, KBr, NaOH, Ca(OH)2, Na2CO3, Fe2O3, K2SO4, etc.
+  if (hasMetal) {
+    const metals = elementList.filter(([el]) => isMetal(el));
+    const nonMetalsNoO = elementList.filter(([el]) => !isMetal(el) && el !== "O" && el !== "H");
+    let result = "";
+
+    // Metals first
+    for (const [el, count] of metals) {
+      result += el + (count > 1 ? count : "");
+    }
+
+    // H next (for hydroxides, hydrides, etc.)
+    if (hasH) {
+      result += "H" + (hCount > 1 ? hCount : "");
+    }
+
+    // Other non-metals (central atoms like S, N, P, C in carbonates/cyanides)
+    for (const [el, count] of nonMetalsNoO) {
+      result += el + (count > 1 ? count : "");
+    }
+
+    // O last
+    if (hasO) {
+      const oCount = elements.get("O") || 0;
+      result += "O" + (oCount > 1 ? oCount : "");
+    }
+
+    return result;
+  }
+
+  // ─── Binary H compounds (no metal, no C): depends on element type ───
+  // Acid-forming elements (Group 16-17): H first → HCl, HBr, HI, HF, H2S, H2O
+  // Covalent hydride elements (Group 13-15): central atom first → NH3, PH3, BH3, SiH4
   if (hasH && elementList.length === 2) {
     const otherElement = elementList.find(([el]) => el !== "H")?.[0];
     if (otherElement) {
       const otherCount = elements.get(otherElement) || 1;
-      return otherElement + (otherCount > 1 ? otherCount : "") + "H" + (hCount > 1 ? hCount : "");
+      if (ACID_ANION_ELEMENTS.has(otherElement)) {
+        // Acid: H first (HCl, HBr, HI, HF, H2S, H2Se, H2O)
+        return "H" + (hCount > 1 ? hCount : "") + otherElement + (otherCount > 1 ? otherCount : "");
+      } else {
+        // Covalent hydride: central atom first (NH3, PH3, BH3, SiH4, AsH3)
+        return otherElement + (otherCount > 1 ? otherCount : "") + "H" + (hCount > 1 ? hCount : "");
+      }
     }
   }
 
-  // Acids with O (oxoacids): H first, then central atom, then O
+  // ─── Oxoacids (H + O + central atom, no metal): H first, central atom, O last ───
   // Examples: H2SO4, HNO3, H3PO4, HClO4
   if (hasH && hasO && elementList.length >= 3) {
     let result = "H" + (hCount > 1 ? hCount : "");
 
-    // Central atom (non-H, non-O, usually the "acid" element like S, N, P, Cl)
-    const centralAtoms = ["S", "N", "P", "Cl", "Br", "I", "C", "B", "Si"];
+    const centralAtoms = ["S", "N", "P", "Cl", "Br", "I", "B", "Si", "Se", "Te"];
     const centralAtomEntry = elementList.find(([el]) => centralAtoms.includes(el) && el !== "H" && el !== "O");
 
     if (centralAtomEntry) {
       const [centralEl, centralCount] = centralAtomEntry;
       result += centralEl + (centralCount > 1 ? centralCount : "");
 
-      // O last
       const oCount = elements.get("O") || 0;
       if (oCount > 0) {
         result += "O" + (oCount > 1 ? oCount : "");
@@ -96,56 +147,18 @@ export function reorderFormula(formula: string): string {
     }
   }
 
-  // Hydracids (H + one other element, no O): H first
-  // Examples: HCl, HBr, HI, HF
-  if (hasH && !hasO && elementList.length === 2) {
-    const otherElement = elementList.find(([el]) => el !== "H")?.[0];
-    if (otherElement) {
-      const otherCount = elements.get(otherElement) || 1;
-      return "H" + (hCount > 1 ? hCount : "") + otherElement + (otherCount > 1 ? otherCount : "");
-    }
-  }
-
-  // Binary ionic compounds without H (no C, no H): metal first, non-metal second
-  // Examples: KCl, NaCl, CaF2, MgO
-  if (!hasH && elementList.length === 2) {
-    const [el1, el2] = elementList.map(([el]) => el);
-    const count1 = elements.get(el1) || 1;
-    const count2 = elements.get(el2) || 1;
-
-    // If first element is metal, keep order; if second is metal, swap
-    if (isMetal(el1) && !isMetal(el2)) {
-      return el1 + (count1 > 1 ? count1 : "") + el2 + (count2 > 1 ? count2 : "");
-    } else if (isMetal(el2) && !isMetal(el1)) {
-      return el2 + (count2 > 1 ? count2 : "") + el1 + (count1 > 1 ? count1 : "");
-    }
-    // Neither or both are metals - fall through to default logic
-  }
-
-  // Default: H first for remaining cases, then others, O last
+  // ─── Default: H first (if present), then other non-metals, O last ───
   let result = "";
 
   if (hasH) {
     result += "H" + (hCount > 1 ? hCount : "");
   }
 
-  // Other elements except O - but for binary compounds without H, try to put metal first
-  const nonOxygenElements = elementList.filter(([el]) => el !== "O" && el !== "H");
-
-  // Sort: metals first, then non-metals (to handle cases like CaCl2 where both need ordering)
-  nonOxygenElements.sort(([elA], [elB]) => {
-    const aIsMetal = isMetal(elA);
-    const bIsMetal = isMetal(elB);
-    if (aIsMetal && !bIsMetal) return -1;
-    if (!aIsMetal && bIsMetal) return 1;
-    return 0; // Keep original order if both same type
-  });
-
-  for (const [el, count] of nonOxygenElements) {
+  const nonOxygenNonH = elementList.filter(([el]) => el !== "O" && el !== "H");
+  for (const [el, count] of nonOxygenNonH) {
     result += el + (count > 1 ? count : "");
   }
 
-  // O last
   if (hasO) {
     const oCount = elements.get("O") || 0;
     result += "O" + (oCount > 1 ? oCount : "");

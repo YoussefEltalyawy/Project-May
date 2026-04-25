@@ -5,6 +5,7 @@ import {
   dedupeHazardStatements,
   buildPrecautionaryFromCorpus,
 } from "@/lib/ghsFormat";
+import { reorderFormula } from "@/lib/formulaUtils";
 
 export type { PrecautionaryGroup } from "@/lib/ghsFormat";
 
@@ -332,7 +333,7 @@ export async function getChemicalIdentity(cid: string): Promise<ChemicalIdentity
       const d = await propRes.json();
       const p = d?.PropertyTable?.Properties?.[0] ?? {};
       result.name = p.Title ?? "";
-      result.formula = p.MolecularFormula ?? "";
+      result.formula = reorderFormula(p.MolecularFormula ?? "");
       result.molecularWeight = p.MolecularWeight ? `${p.MolecularWeight} g/mol` : "";
       result.iupacName = p.IUPACName ?? "";
       result.inchiKey = p.InChIKey ?? "";
