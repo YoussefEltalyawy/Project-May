@@ -30,7 +30,7 @@ export function SiteNav() {
             height={24}
             className="w-5 h-5 md:w-7 md:h-7 object-contain"
           />
-          <span className="text-sm md:text-base font-semibold text-brand-text">Project May</span>
+          <span className="text-xs md:text-base font-semibold text-brand-text whitespace-nowrap">Project May</span>
         </div>
 
         {/* Vertical divider */}
@@ -41,10 +41,10 @@ export function SiteNav() {
           href={GITHUB_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1.5 text-[15px] font-medium text-brand-text hover:text-accent transition-colors"
+          className="flex items-center gap-1.5 text-sm md:text-[15px] font-medium text-brand-text hover:text-accent transition-colors"
         >
           <GithubIcon size={16} className="md:w-5 md:h-5" />
-          <span className="text-sm md:text-base">Github</span>
+          <span className="text-xs md:text-base whitespace-nowrap">Github</span>
         </a>
       </div>
     </nav>

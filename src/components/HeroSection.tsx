@@ -31,10 +31,10 @@ export function HeroSection({ onSelectTerm, isLoading, isCentered = false }: Her
       {/* Teal globe — Pure CSS for mobile only (< sm) */}
       <div
         aria-hidden
-        className="pointer-events-none fixed bottom-0 left-1/2 -translate-x-1/2 translate-y-[45%] w-[1200px] h-[1200px] sm:hidden z-0"
+        className="pointer-events-none fixed bottom-0 left-1/2 -translate-x-1/2 translate-y-[60%] w-[1200px] h-[1200px] sm:hidden z-0"
       >
-        <div className="absolute inset-0 rounded-full bg-accent/[0.08] blur-[80px]" />
-        <div className="absolute inset-[20%] rounded-full bg-accent/[0.12] blur-[80px]" />
+        <div className="absolute inset-0 rounded-full bg-accent/[0.05] blur-[80px]" />
+        <div className="absolute inset-[20%] rounded-full bg-accent/[0.08] blur-[80px]" />
       </div>
 
       {/* Teal globe — Image for desktop only (sm and up) */}
