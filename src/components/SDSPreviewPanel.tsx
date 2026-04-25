@@ -90,10 +90,10 @@ export const SDSPreviewPanel = ({ data, onClear }: SDSPreviewPanelProps) => {
   return (
     <div className="w-full space-y-5">
       {/* ── Compound info bar ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
-        {/* Identity */}
-        <div className="flex items-center gap-3 min-w-0 flex-1">
-          <div className="min-w-0">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
+        {/* Identity row with side actions */}
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <div className="min-w-0 flex-1">
             <h2 className="text-base font-semibold text-brand-text truncate leading-tight">
               {editedData?.identity?.name || "Chemical Compound"}
             </h2>
@@ -106,35 +106,41 @@ export const SDSPreviewPanel = ({ data, onClear }: SDSPreviewPanelProps) => {
               <span className="text-xs text-brand-text-muted/60">CID: {editedData.cid}</span>
             </div>
           </div>
+          <div className="flex items-center gap-1 shrink-0">
+            <a
+              href={`https://pubchem.ncbi.nlm.nih.gov/compound/${editedData.cid}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-brand-text-muted hover:text-accent hover:bg-accent/5 rounded-full transition-colors"
+            >
+              <ExternalLink size={14} />
+              <span className="hidden md:inline">PubChem</span>
+            </a>
+            {onClear && (
+              <>
+                <div className="w-px h-4 bg-brand-border mx-1" />
+                <button
+                  onClick={onClear}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-brand-text-muted hover:text-secondary hover:bg-secondary/5 rounded-full transition-colors"
+                  title="Clear results"
+                >
+                  <X size={14} />
+                  <span className="hidden md:inline">Clear</span>
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-1 shrink-0">
-          <a
-            href={`https://pubchem.ncbi.nlm.nih.gov/compound/${editedData.cid}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-brand-text-muted hover:text-accent hover:bg-accent/5 rounded-full transition-colors"
-          >
-            <ExternalLink size={14} />
-            <span className="hidden md:inline">PubChem</span>
-          </a>
-          <div className="w-px h-4 bg-brand-border mx-1" />
-          <PDFExportButton key={`export-${debouncedData.cid}`} data={debouncedData} />
-          {onClear && (
-            <>
-              <div className="w-px h-4 bg-brand-border mx-1" />
-              <button
-                onClick={onClear}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-brand-text-muted hover:text-secondary hover:bg-secondary/5 rounded-full transition-colors"
-                title="Clear results"
-              >
-                <X size={14} />
-                <span className="hidden md:inline">Clear</span>
-              </button>
-            </>
-          )}
+        {/* Export button - full width on mobile */}
+        <div className="w-full sm:w-auto sm:hidden">
+          <PDFExportButton key={`export-${debouncedData.cid}`} data={debouncedData} fullWidth />
         </div>
+      </div>
+
+      {/* Export button - inline on desktop */}
+      <div className="hidden sm:flex items-center gap-1">
+        <PDFExportButton key={`export-${debouncedData.cid}`} data={debouncedData} />
       </div>
 
       {/* ── View switcher ── */}

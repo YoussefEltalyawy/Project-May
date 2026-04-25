@@ -21,7 +21,7 @@ const PDFDownloadLink = dynamic(
   }
 );
 
-export const PDFExportButton = ({ data }: { data: SDSData }) => {
+export const PDFExportButton = ({ data, fullWidth = false }: { data: SDSData; fullWidth?: boolean }) => {
   const filename = `SDS_${data.identity.name.replace(/\s+/g, "_")}_${data.identity.cas || data.cid}.pdf`;
   const dataHash = `${data.cid}-${JSON.stringify(data).length}`;
 
@@ -34,9 +34,9 @@ export const PDFExportButton = ({ data }: { data: SDSData }) => {
       {({ loading }) => (
         <button
           disabled={loading}
-          className="flex items-center gap-2 bg-secondary hover:bg-accent-dark text-white text-sm font-semibold
+          className={`flex items-center justify-center gap-2 bg-secondary hover:bg-accent-dark text-white text-sm font-semibold
                      px-4 py-2 rounded-lg active:scale-95 transition-all duration-150
-                     disabled:opacity-50 disabled:cursor-not-allowed"
+                     disabled:opacity-50 disabled:cursor-not-allowed ${fullWidth ? 'w-full' : ''}`}
         >
           <Download size={14} />
           {loading ? "Building PDF…" : "Export SDS PDF"}
