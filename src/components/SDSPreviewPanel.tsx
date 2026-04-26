@@ -141,7 +141,7 @@ export const SDSPreviewPanel = ({ data, onClear }: SDSPreviewPanelProps) => {
 
       {/* ── View switcher + Desktop Export ── */}
       <div className="flex items-center gap-3">
-        <div className="flex p-1 bg-gray-100 rounded-xl max-w-sm">
+        <div className="flex p-1 bg-gray-100 rounded-xl w-full sm:max-w-sm">
         {tabs.map(({ id, label, icon: Icon, hideOnMobile }) => {
           if (hideOnMobile && isMobile) return null;
           return (
