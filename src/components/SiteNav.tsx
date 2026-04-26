@@ -1,4 +1,7 @@
 import Image from "next/image";
+import { useRef } from "react";
+import { useGSAP } from "@gsap/react";
+import { animateEntrance } from "@/lib/animation-utils";
 
 const GITHUB_URL = "https://github.com/YoussefEltalyawy/Project-May";
 
@@ -18,8 +21,14 @@ function GithubIcon({ size = 18, className }: { size?: number; className?: strin
 }
 
 export function SiteNav() {
+  const navRef = useRef<HTMLElement>(null);
+
+  useGSAP(() => {
+    animateEntrance(navRef.current, { delay: 0.1 });
+  }, { scope: navRef });
+
   return (
-   <nav className="w-max max-w-[calc(100vw-2rem)] mt-[max(1.5rem,env(safe-area-inset-top))] md:mt-[max(2rem,env(safe-area-inset-top))] mx-auto">
+   <nav ref={navRef} className="opacity-0 w-max max-w-[calc(100vw-2rem)] mt-[max(1.5rem,env(safe-area-inset-top))] md:mt-[max(2rem,env(safe-area-inset-top))] mx-auto">
       <div className="flex items-center gap-3 md:gap-5 px-4 py-2.5 md:px-6 md:py-3 rounded-full border border-accent bg-white/85 backdrop-blur-md shadow-sm w-max">
         <div className="flex items-center gap-2">
           <Image

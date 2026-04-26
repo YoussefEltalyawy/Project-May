@@ -1,4 +1,7 @@
 import { Beaker, Sparkles, FileText, Database } from "lucide-react";
+import { useRef } from "react";
+import { useGSAP } from "@gsap/react";
+import { animateEntrance } from "@/lib/animation-utils";
 
 export const LOADING_STEPS = [
   { label: "Searching database",  icon: Database  },
@@ -16,9 +19,14 @@ export function LoadingState({ progress, loadingStep }: LoadingStateProps) {
   const CurrentIcon = LOADING_STEPS[loadingStep]?.icon ?? Beaker;
   const currentStepIndex = loadingStep + 1;
   const totalSteps = LOADING_STEPS.length;
+  const container = useRef<HTMLDivElement>(null);
+
+  useGSAP(() => {
+    animateEntrance(container.current, { stagger: 0 });
+  }, { scope: container });
 
   return (
-    <div className="animate-fade-up max-w-2xl mx-auto w-full">
+    <div ref={container} className="max-w-2xl mx-auto w-full opacity-0">
       <div className="bg-brand-surface rounded-2xl border border-brand-border shadow-sm overflow-hidden flex flex-col transition-all duration-300">
         {/* Sleek Progress Bar */}
         <div className="h-1 bg-gray-100 w-full relative overflow-hidden">

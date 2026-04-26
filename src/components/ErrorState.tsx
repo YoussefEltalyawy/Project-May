@@ -1,4 +1,7 @@
 import { AlertCircle, X } from "lucide-react";
+import { useRef } from "react";
+import { useGSAP } from "@gsap/react";
+import { animateEntrance } from "@/lib/animation-utils";
 
 interface ErrorStateProps {
   message: string;
@@ -6,8 +9,14 @@ interface ErrorStateProps {
 }
 
 export function ErrorState({ message, onDismiss }: ErrorStateProps) {
+  const container = useRef<HTMLDivElement>(null);
+
+  useGSAP(() => {
+    animateEntrance(container.current, { stagger: 0 });
+  }, { scope: container });
+
   return (
-    <div className="animate-scale-in max-w-3xl mx-auto">
+    <div ref={container} className="max-w-3xl mx-auto opacity-0">
       <div className="bg-red-50/90 border border-red-200 rounded-2xl p-6 flex items-start gap-4">
         <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
           <AlertCircle size={20} className="text-red-600" />
