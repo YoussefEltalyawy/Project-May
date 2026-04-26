@@ -24,6 +24,9 @@ export const metadata: Metadata = {
     "Instantly search 100M+ chemical compounds and generate professional, AI-enhanced Safety Data Sheets. Powered by PubChem and Gemini AI.",
   keywords: ["SDS", "Safety Data Sheet", "chemical", "PubChem", "AI", "PDF", "MSDS", "safety"],
   authors: [{ name: "Project May" }],
+  icons: {
+    icon: "/favicon.ico",
+  },
   openGraph: {
     title: "Project May | AI-Powered Safety Data Sheets",
     description:

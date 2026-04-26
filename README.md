@@ -1,36 +1,31 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Project May 
 
-## Getting Started
 
-First, run the development server:
+**Project May** is a specialized web application designed to automatically generate standard 10-section Safety Data Sheets (SDS) for chemical compounds. 
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 📖 The Story Behind Project May
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+I initially built this website to help my mom. She is a chemist and needed to create Safety Data Sheets for dozens of compounds manually, which meant dealing with Microsoft Word—a tedious and frustrating process. I decided to build a tool that would automate the heavy lifting for her. 
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+The name **"Project May"** stems from her birthday, which is in May. 
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## ✨ Features
 
-## Learn More
+- **Standardized SDS Generation:** Automatically creates a standard 16-section Safety Data Sheet for chemical compounds, strictly ordered to comply with global regulations.
+- **AI-Powered Summarization:** Integrates the Google Gemini API to parse, summarize, and clean up dense, repetitive data directly from the PubChem PUG-View API, making it concise and professional.
+- **Smart Data Caching:** Employs a dual-caching strategy (localStorage & Neon Postgres Database) to minimize external API calls, resulting in lightning-fast response times for previously queried compounds.
+- **High-Quality PDF Exports:** Uses `@react-pdf/renderer` to produce clean, Swiss-style PDF documents containing embedded Base64 GHS hazard pictograms to guarantee reliable rendering anywhere.
+- **International Safety Focus:** Includes specialized features such as high-visibility Arabic safety warnings specifically tailored for lab workers in her environment.
+- **Sleek & Premium UI:** A refined, distraction-free interface prioritizing ease of use, so generating an SDS is as simple as searching for the compound and clicking "Export."
 
-To learn more about Next.js, take a look at the following resources:
+## 🚀 Tech Stack
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Framework:** [Next.js](https://nextjs.org/) (App Router)
+- **Data Source:** [PubChem API](https://pubchem.ncbi.nlm.nih.gov/)
+- **AI Integration:** [Google Gemini API](https://deepmind.google/technologies/gemini/)
+- **Database:** [Neon (Serverless Postgres)](https://neon.tech/)
+- **PDF Rendering:** [`@react-pdf/renderer`](https://react-pdf.org/)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+*Built with ❤️ for my mom.*

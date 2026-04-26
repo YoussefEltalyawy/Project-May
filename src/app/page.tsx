@@ -66,7 +66,11 @@ export default function Home() {
   useEffect(() => {
     if (!isLoading) return;
     const progressInterval = setInterval(() => {
-      setProgress((p) => (p >= 95 ? p : Math.min(p + Math.random() * 6 + 1, 95)));
+      setProgress((p) => {
+        const increment = Math.random() * 3 + 1;
+        const newProgress = Math.min(p + increment, 95);
+        return newProgress;
+      });
     }, 250);
     const stepInterval = setInterval(() => {
       setLoadingStep((s) => (s < LOADING_STEPS.length - 1 ? s + 1 : s));

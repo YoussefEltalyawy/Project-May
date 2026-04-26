@@ -14,66 +14,62 @@ interface LoadingStateProps {
 
 export function LoadingState({ progress, loadingStep }: LoadingStateProps) {
   const CurrentIcon = LOADING_STEPS[loadingStep]?.icon ?? Beaker;
+  const currentStepIndex = loadingStep + 1;
+  const totalSteps = LOADING_STEPS.length;
 
   return (
-    <div className="animate-scale-in max-w-3xl mx-auto">
-      <div className="bg-white rounded-2xl border border-brand-border shadow-xl shadow-gray-200/50 overflow-hidden">
-        {/* Progress bar */}
-        <div className="h-1 bg-gray-100">
+    <div className="animate-fade-up max-w-2xl mx-auto w-full">
+      <div className="bg-brand-surface rounded-2xl border border-brand-border shadow-sm overflow-hidden flex flex-col transition-all duration-300">
+        {/* Sleek Progress Bar */}
+        <div className="h-1 bg-gray-100 w-full relative overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-accent via-teal-400 to-accent transition-all duration-500 ease-out"
+            className="h-full bg-accent transition-all duration-500 ease-out"
             style={{ width: `${progress}%` }}
           />
         </div>
 
-        <div className="p-5 sm:p-8 md:p-10">
-          <div className="flex items-center gap-4 sm:gap-6">
-            {/* Animated icon */}
-            <div className="relative shrink-0">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-xl sm:rounded-2xl bg-accent-light flex items-center justify-center">
-                <CurrentIcon size={22} className="text-accent sm:w-6 sm:h-6 md:w-7 md:h-7" />
+        <div className="p-8 md:p-10 flex flex-col gap-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+            <div className="flex flex-row items-center gap-5">
+              {/* Premium Icon Container */}
+              <div className="w-14 h-14 rounded-2xl bg-accent/[0.04] border border-accent/10 flex items-center justify-center shrink-0 shadow-sm">
+                <CurrentIcon size={24} className="text-accent" strokeWidth={1.75} />
               </div>
-              <div className="absolute inset-0 rounded-xl sm:rounded-2xl ring-2 ring-secondary/30 animate-pulse-ring" />
+              
+              <div className="flex flex-col">
+                <h3 className="text-xl font-semibold text-brand-text tracking-tight mb-1">
+                  {LOADING_STEPS[loadingStep]?.label}
+                </h3>
+                <div className="text-sm text-brand-text-muted">
+                  Preparing standardized results...
+                </div>
+              </div>
             </div>
 
-            <div className="flex-1 min-w-0">
-              <h3 className="text-base sm:text-lg font-semibold text-brand-text mb-1">
-                {LOADING_STEPS[loadingStep]?.label}
-              </h3>
-              <p className="text-xs sm:text-sm text-brand-text-muted mb-3 sm:mb-4">
-                {Math.round(progress)}% complete
-              </p>
-
-              {/* Step indicators */}
-              <div className="flex items-center gap-2">
-                {LOADING_STEPS.map((step, idx) => {
-                  const Icon = step.icon;
-                  const isActive = idx === loadingStep;
-                  const isDone   = idx < loadingStep;
-                  return (
-                    <div
-                      key={step.label}
-                      className={[
-                        "flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-medium transition-all duration-300",
-                        isActive ? "bg-accent-light text-accent-dark"
-                          : isDone  ? "bg-secondary/10 text-secondary"
-                          : "bg-gray-100 text-gray-400",
-                      ].join(" ")}
-                    >
-                      <Icon size={10} className="sm:w-3 sm:h-3" />
-                      <span className="hidden sm:inline">{step.label}</span>
-                    </div>
-                  );
-                })}
-              </div>
+            {/* Step out of step badge */}
+            <div className="shrink-0 flex items-center h-8 px-3.5 bg-accent/[0.04] border border-accent/10 rounded-full shadow-sm text-accent">
+                <span className="text-xs font-semibold tracking-wider uppercase">
+                  Step {currentStepIndex} of {totalSteps}
+                </span>
             </div>
           </div>
-        </div>
 
-        {/* Skeleton */}
-        <div className="px-5 sm:px-8 pb-5 sm:pb-8">
-          <div className="skeleton h-24 sm:h-32 w-full rounded-lg sm:rounded-xl" />
+          {/* Restrained elegant skeleton lines */}
+          <div className="space-y-4 pt-2">
+            <div className="skeleton h-3 w-3/4 rounded-full bg-gray-100" />
+            <div className="skeleton h-3 w-full rounded-full bg-gray-100" />
+            <div className="skeleton h-3 w-5/6 rounded-full bg-gray-100" />
+            <div className="skeleton h-3 w-1/2 rounded-full bg-gray-100" />
+          </div>
         </div>
+      </div>
+      
+      {/* Optional progress indicator text */}
+      <div className="mt-4 text-center">
+        <span className="text-sm flex items-center justify-center gap-2 font-medium text-brand-text-muted">
+          <span className="inline-block w-2 h-2 rounded-full bg-accent animate-pulse" />
+          {Math.round(progress)}% Complete
+        </span>
       </div>
     </div>
   );
