@@ -1,8 +1,8 @@
 import { SDSData, PhysicalProperties } from "@/lib/pubchem";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Beaker, AlertTriangle, Heart, Flame, Hand, Package, Shield,
-  Leaf, Trash2, Microscope, AlertCircle, Maximize2, Minimize2, ArrowLeft,
+  Leaf, Trash2, Microscope, AlertCircle, Maximize2, Minimize2,
 } from "lucide-react";
 
 // ─── Section definitions ─────────────────────────────────────────────────────
@@ -18,7 +18,7 @@ const TEXT_SECTIONS: Array<{
   { num: "5", key: "fireFighting", label: "Firefight Measure",                     icon: Flame },
   { num: "6", key: "handling",     label: "Handling",                              icon: Hand },
   { num: "6", key: "storage",      label: "Storage",                               icon: Package },
-  { num: "7", key: "exposure",     label: "Exposure Controls / Personal Protection", icon: Shield },
+  { num: "7", key: "exposure",     label: "Exposure Controls", icon: Shield },
   { num: "8", key: "ecological",   label: "Ecological Information",                icon: Leaf },
   { num: "9", key: "disposal",     label: "Disposal Considerations",               icon: Trash2 },
   { num: "10", key: "toxicology",  label: "Toxicological Info",                    icon: Microscope },
@@ -48,6 +48,16 @@ interface SDSEditorProps {
 
 export const SDSEditor = ({ data, onChange }: SDSEditorProps) => {
   const [focusedSection, setFocusedSection] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const handleTextChange = (
     key: keyof Omit<SDSData, "cid" | "identity" | "ghs" | "physical">,
@@ -71,24 +81,8 @@ export const SDSEditor = ({ data, onChange }: SDSEditorProps) => {
 
   return (
     <div className="flex flex-col gap-5 h-full overflow-y-auto pr-2 pb-10 scroll-smooth custom-scrollbar">
-      {/* Header */}
-      <div className="flex items-center justify-between px-1">
-        <h3 className="text-xs font-bold text-brand-text-muted uppercase tracking-widest">
-          {focusedSection ? "Focus Mode" : "All Sections"}
-        </h3>
-        {focusedSection && (
-          <button
-            onClick={() => setFocusedSection(null)}
-            className="flex items-center gap-1.5 px-3 py-1 bg-accent text-white rounded-full text-[10px] font-bold shadow-sm hover:bg-accent-dark transition-all"
-          >
-            <ArrowLeft size={12} />
-            Show All Sections
-          </button>
-        )}
-      </div>
-
       {/* ── Section navigator ── */}
-      {!focusedSection && (
+      {!focusedSection && !isMobile && (
         <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b border-gray-100 py-3 mb-2 flex flex-wrap gap-2">
           <NavPill
             label="SETUP"
@@ -96,7 +90,6 @@ export const SDSEditor = ({ data, onChange }: SDSEditorProps) => {
           />
           <NavPill
             label="S2. PHYSICAL"
-            variant="accent"
             onClick={() => document.getElementById("section-2")?.scrollIntoView({ behavior: "smooth" })}
           />
           {TEXT_SECTIONS.map(({ num, label, key }) => (
@@ -108,7 +101,6 @@ export const SDSEditor = ({ data, onChange }: SDSEditorProps) => {
           ))}
           <NavPill
             label="ARABIC"
-            variant="secondary"
             onClick={() => document.getElementById("section-arabic")?.scrollIntoView({ behavior: "smooth" })}
           />
         </div>
@@ -146,22 +138,59 @@ export const SDSEditor = ({ data, onChange }: SDSEditorProps) => {
         </SectionCard>
       )}
 
+      {/* ── Arabic Warning ── */}
+      {(!focusedSection || focusedSection === "arabic") && (
+        <SectionCard
+          id="section-arabic"
+          focused={focusedSection === "arabic"}
+          onToggleFocus={() => toggleFocus("arabic")}
+          className="bg-secondary/[0.03]"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <SectionCardHeader
+              icon={AlertCircle}
+              iconClassName="text-secondary"
+            >
+              <h4 className="font-bold text-brand-text text-sm">{ARABIC_SECTION.label}</h4>
+            </SectionCardHeader>
+            <span className="text-[10px] px-2.5 py-1 bg-secondary text-white font-bold rounded-full shadow-sm">
+              RTL
+            </span>
+          </div>
+          <textarea
+            id="editor-arabic"
+            value={data.arabicWarning || ""}
+            onChange={(e) => onChange({ ...data, arabicWarning: e.target.value })}
+            dir="rtl"
+            placeholder="تحذير السلامة بالعربية..."
+            className={`editor-textarea block w-full text-lg font-bold ${
+              focusedSection === "arabic" ? "min-h-[450px]" : "min-h-[160px]"
+            }`}
+            style={{ fontFamily: "Cairo, sans-serif" }}
+            spellCheck={false}
+          />
+        </SectionCard>
+      )}
+
       {/* ── 2. Physical & Chemical Properties ── */}
       {(!focusedSection || focusedSection === "2") && (
         <SectionCard
           id="section-2"
           focused={focusedSection === "2"}
           onToggleFocus={() => toggleFocus("2")}
-          className="bg-accent/[0.02]"
         >
           <SectionCardHeader
             icon={Beaker}
-            iconClassName="bg-accent text-white shadow-sm"
+            iconClassName={
+              focusedSection === "2" ? "text-accent" : "text-brand-text-muted group-hover:text-accent"
+            }
           >
-            <h4 className="font-bold text-brand-text text-sm">Section 2</h4>
-            <p className="text-[11px] text-accent font-bold uppercase tracking-tight">
-              Physical & Chemical Properties
-            </p>
+            <h4 className={[
+              "font-bold text-brand-text text-sm",
+              focusedSection === "2" ? "text-accent" : "text-brand-text-muted group-hover:text-accent",
+            ].join(" ")}>
+              S2. Physical & Chemical Props.
+            </h4>
           </SectionCardHeader>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
             {PHYSICAL_PROPS.map(({ key, label, placeholder }) => (
@@ -205,20 +234,17 @@ export const SDSEditor = ({ data, onChange }: SDSEditorProps) => {
             <SectionCardHeader
               icon={Icon}
               iconClassName={
-                isFocused
-                  ? "bg-accent text-white shadow-sm"
-                  : "bg-gray-100 text-brand-text-muted group-hover:bg-accent group-hover:text-white"
+                isFocused ? "text-accent" : "text-brand-text-muted group-hover:text-accent"
               }
             >
-              <h4 className="font-bold text-brand-text text-sm">Section {num}</h4>
               <label
                 htmlFor={`editor-${String(key)}`}
                 className={[
-                  "text-[11px] font-bold uppercase tracking-tight transition-colors",
+                  "font-bold text-brand-text text-sm transition-colors",
                   isFocused ? "text-accent" : "text-brand-text-muted group-hover:text-accent",
                 ].join(" ")}
               >
-                {label}
+                S{num}. {label}
               </label>
             </SectionCardHeader>
             <textarea
@@ -228,54 +254,10 @@ export const SDSEditor = ({ data, onChange }: SDSEditorProps) => {
               placeholder={`Enter details for ${label.toLowerCase()}…`}
               className={`editor-textarea block w-full mt-3 ${isFocused ? "min-h-[450px]" : "min-h-[140px]"}`}
             />
-            <div className="mt-2 flex justify-between items-center text-[10px] text-gray-400 font-medium px-1">
-              <span>Supports multiline text</span>
-              <span className="uppercase">{String(key).toUpperCase()}</span>
-            </div>
           </SectionCard>
         );
       })}
 
-      {/* ── Arabic Warning ── */}
-      {(!focusedSection || focusedSection === "arabic") && (
-        <SectionCard
-          id="section-arabic"
-          focused={focusedSection === "arabic"}
-          onToggleFocus={() => toggleFocus("arabic")}
-          className="bg-secondary/[0.03]"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <SectionCardHeader
-              icon={AlertCircle}
-              iconClassName={
-                focusedSection === "arabic"
-                  ? "bg-secondary text-white shadow-sm"
-                  : "bg-secondary/10 text-secondary"
-              }
-            >
-              <h4 className="font-bold text-brand-text text-sm">Action Level Warning</h4>
-              <p className="text-[11px] text-secondary font-bold uppercase tracking-tight">
-                {ARABIC_SECTION.label}
-              </p>
-            </SectionCardHeader>
-            <span className="text-[10px] px-2.5 py-1 bg-secondary text-white font-bold rounded-full shadow-sm">
-              RTL
-            </span>
-          </div>
-          <textarea
-            id="editor-arabic"
-            value={data.arabicWarning || ""}
-            onChange={(e) => onChange({ ...data, arabicWarning: e.target.value })}
-            dir="rtl"
-            placeholder="تحذير السلامة بالعربية..."
-            className={`editor-textarea block w-full text-lg font-bold ${
-              focusedSection === "arabic" ? "min-h-[450px]" : "min-h-[160px]"
-            }`}
-            style={{ fontFamily: "Cairo, sans-serif" }}
-            spellCheck={false}
-          />
-        </SectionCard>
-      )}
     </div>
   );
 };
@@ -344,16 +326,9 @@ function SectionCardHeader({
     <div className="flex items-center gap-3">
       {accentBar && <span className="w-1.5 h-5 bg-accent rounded-full" />}
       {Icon && (
-        <div
-          className={[
-            "w-9 h-9 rounded-xl flex items-center justify-center transition-all",
-            iconClassName || "bg-gray-100 text-brand-text-muted",
-          ].join(" ")}
-        >
-          <Icon size={18} />
-        </div>
+        <Icon size={18} className={iconClassName || "text-brand-text-muted sm:size-[18px] size-[16px]"} />
       )}
-      <div>{children}</div>
+      <div className="sm:text-base text-sm">{children}</div>
     </div>
   );
 }

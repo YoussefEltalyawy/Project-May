@@ -206,17 +206,11 @@ export const SDSPreviewPanel = ({ data, onClear }: SDSPreviewPanelProps) => {
           <div className={`${activeTab === "preview" ? "w-full" : "w-full lg:w-1/2"} flex flex-col transition-all duration-300`}>
             <div className="bg-brand-surface rounded-2xl border border-brand-border overflow-hidden flex flex-col h-[600px] lg:h-[calc(100vh-280px)]">
               {/* Preview header */}
-              <div className="flex items-center justify-between px-4 py-3 bg-gray-50/80 border-b border-gray-100">
-                <div className="flex items-center gap-2">
-                  <Eye size={16} className="text-accent" />
-                  <h3 className="font-semibold text-brand-text">Live Preview</h3>
-                </div>
-                <span className="text-xs text-gray-400">PDF format</span>
-              </div>
+
 
               {/* Preview content */}
-              <div className="flex-1 p-4 bg-gray-50/30">
-                <div className="w-full h-full rounded-xl overflow-hidden border border-brand-border bg-white shadow-inner">
+              <div className="flex-1 bg-gray-50/30">
+                <div className="w-full h-full overflow-hidden border border-brand-border bg-white shadow-inner">
                   <PDFViewer
                     key={`viewer-${debouncedData.cid}-${JSON.stringify(debouncedData).length}`}
                     width="100%"
