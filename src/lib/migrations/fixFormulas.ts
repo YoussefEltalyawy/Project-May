@@ -157,8 +157,6 @@ export async function runFormulaMigration(): Promise<MigrationResult> {
     const historyResult = await fixHistoryFormulas(db);
     errors.push(...historyResult.errors);
 
-    db.close();
-
     return {
       success: true,
       cacheUpdated: cacheResult.count,

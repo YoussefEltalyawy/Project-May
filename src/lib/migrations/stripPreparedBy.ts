@@ -54,8 +54,6 @@ export async function runStripPreparedByMigration(): Promise<MigrationResult> {
       }
     }
 
-    db.close();
-
     return { success: true, updated, errors };
   } catch (e) {
     return { success: false, updated: 0, errors: [`Migration failed: ${e}`] };
