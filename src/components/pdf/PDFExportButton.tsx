@@ -1,12 +1,13 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Download, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { SDSData } from "@/lib/pubchem";
-import { SDSTemplate } from "./SDSTemplate";
 
-const PDFDownloadLink = dynamic(
-  () => import("@react-pdf/renderer").then((m) => m.PDFDownloadLink),
+// The core button logic lives in a separate module so that
+// @react-pdf/renderer (which crashes on SSR) is only loaded client-side.
+const PDFExportButtonCore = dynamic<{ data: SDSData; fullWidth?: boolean }>(
+  () => import("./PDFExportButtonCore"),
   {
     ssr: false,
     loading: () => (
@@ -19,30 +20,13 @@ const PDFDownloadLink = dynamic(
         Loading…
       </button>
     ),
-  }
+  },
 );
 
-export const PDFExportButton = ({ data, fullWidth = false }: { data: SDSData; fullWidth?: boolean }) => {
-  const filename = `SDS_${data.identity.name.replace(/\s+/g, "_")}_${data.identity.cas || data.cid}.pdf`;
-  const dataHash = `${data.cid}-${JSON.stringify(data).length}`;
-
-  return (
-    <PDFDownloadLink
-      key={`download-${dataHash}`}
-      document={<SDSTemplate data={data} />}
-      fileName={filename}
-    >
-      {({ loading }) => (
-        <button
-          disabled={loading}
-          className={`flex items-center justify-center gap-2 bg-secondary hover:bg-accent-dark text-white text-sm font-semibold
-                     px-4 py-2 rounded-lg active:scale-95 transition-all duration-150
-                     disabled:opacity-50 disabled:cursor-not-allowed ${fullWidth ? 'w-full' : ''}`}
-        >
-          {loading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-          {loading ? "Building PDF…" : "Export SDS PDF"}
-        </button>
-      )}
-    </PDFDownloadLink>
-  );
-};
+export const PDFExportButton = ({
+  data,
+  fullWidth = false,
+}: {
+  data: SDSData;
+  fullWidth?: boolean;
+}) => <PDFExportButtonCore data={data} fullWidth={fullWidth} />;
