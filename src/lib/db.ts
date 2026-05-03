@@ -72,13 +72,13 @@ export async function initDb() {
       CREATE INDEX IF NOT EXISTS idx_chemicals_name ON chemicals(name);
     `;
 
-    // One-time migration: strip preparedBy from all existing rows
-    // The operator '-' removes a key from JSONB; WHERE clause makes it a no-op
-    // when the key is already absent, so this is safe to run every cold start.
+    // One-time migration: strip preparedBy from all existing rows.
+    // '-' removes a JSONB key; jsonb_exists() used instead of the '?' operator
+    // because the Neon HTTP driver misreads bare '?' as a parameter placeholder.
     await sql`
       UPDATE chemicals
       SET data = data - 'preparedBy'
-      WHERE data ? 'preparedBy';
+      WHERE jsonb_exists(data, 'preparedBy');
     `;
   });
 
