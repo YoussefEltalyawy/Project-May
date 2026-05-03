@@ -1,8 +1,6 @@
 import { reorderFormula } from "@/lib/formulaUtils";
 import { SDSData } from "@/lib/pubchem";
-
-const DB_NAME = "project-may-db";
-const DB_VERSION = 2;
+import { openDatabase } from "@/lib/cache";
 
 interface MigrationResult {
   success: boolean;
@@ -12,20 +10,11 @@ interface MigrationResult {
 }
 
 /**
- * Open IndexedDB connection
- */
-function openDatabase(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result);
-  });
-}
-
-/**
  * Fix formulas in SDS cache
  */
-async function fixCacheFormulas(db: IDBDatabase): Promise<{ count: number; errors: string[] }> {
+async function fixCacheFormulas(
+  db: IDBDatabase,
+): Promise<{ count: number; errors: string[] }> {
   const errors: string[] = [];
   let count = 0;
 
@@ -34,12 +23,11 @@ async function fixCacheFormulas(db: IDBDatabase): Promise<{ count: number; error
     const store = tx.objectStore("sds_cache");
     const request = store.getAll();
 
-    const entries: { cid: string; data: SDSData; timestamp: number }[] = await new Promise(
-      (resolve, reject) => {
+    const entries: { cid: string; data: SDSData; timestamp: number }[] =
+      await new Promise((resolve, reject) => {
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);
-      }
-    );
+      });
 
     // Find entries that need updating
     const updates: { cid: string; data: SDSData; timestamp: number }[] = [];
@@ -85,7 +73,9 @@ async function fixCacheFormulas(db: IDBDatabase): Promise<{ count: number; error
 /**
  * Fix formulas in search history
  */
-async function fixHistoryFormulas(db: IDBDatabase): Promise<{ count: number; errors: string[] }> {
+async function fixHistoryFormulas(
+  db: IDBDatabase,
+): Promise<{ count: number; errors: string[] }> {
   const errors: string[] = [];
   let count = 0;
 
@@ -203,12 +193,11 @@ export async function previewFormulaMigration(): Promise<{
     const cacheStore = cacheTx.objectStore("sds_cache");
     const cacheRequest = cacheStore.getAll();
 
-    const cacheEntries: { cid: string; data: SDSData; timestamp: number }[] = await new Promise(
-      (resolve, reject) => {
+    const cacheEntries: { cid: string; data: SDSData; timestamp: number }[] =
+      await new Promise((resolve, reject) => {
         cacheRequest.onsuccess = () => resolve(cacheRequest.result);
         cacheRequest.onerror = () => reject(cacheRequest.error);
-      }
-    );
+      });
 
     for (const entry of cacheEntries) {
       if (!entry.data?.identity?.formula) continue;
@@ -234,10 +223,12 @@ export async function previewFormulaMigration(): Promise<{
       timestamp: number;
     }
 
-    const historyEntries: HistoryItem[] = await new Promise((resolve, reject) => {
-      historyRequest.onsuccess = () => resolve(historyRequest.result);
-      historyRequest.onerror = () => reject(historyRequest.error);
-    });
+    const historyEntries: HistoryItem[] = await new Promise(
+      (resolve, reject) => {
+        historyRequest.onsuccess = () => resolve(historyRequest.result);
+        historyRequest.onerror = () => reject(historyRequest.error);
+      },
+    );
 
     for (const entry of historyEntries) {
       if (!entry.formula) continue;

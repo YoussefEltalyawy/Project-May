@@ -2,13 +2,19 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { fetchFullSDSByCid, getCIDByName, SDSData } from "@/lib/pubchem";
-import { getCachedSDS, setCachedSDS, addSearchHistory, migrateFromLocalStorage } from "@/lib/cache";
+import {
+  getCachedSDS,
+  setCachedSDS,
+  addSearchHistory,
+  migrateFromLocalStorage,
+} from "@/lib/cache";
 import { SiteNav } from "@/components/SiteNav";
 import { HeroSection } from "@/components/HeroSection";
 import { LoadingState, LOADING_STEPS } from "@/components/LoadingState";
 import { ErrorState } from "@/components/ErrorState";
 import { ResultsSection } from "@/components/ResultsSection";
 import { runFormulaMigration } from "@/lib/migrations/fixFormulas";
+import { runStripPreparedByMigration } from "@/lib/migrations/stripPreparedBy";
 
 // ─── Data fetching logic ─────────────────────────────────────────────────────
 
@@ -25,23 +31,40 @@ async function summarizeSDS(rawResult: SDSData): Promise<SDSData> {
 // ─── Page component ──────────────────────────────────────────────────────────
 
 export default function Home() {
-  const [data, setData]               = useState<SDSData | null>(null);
-  const [isLoading, setIsLoading]     = useState(false);
+  const [data, setData] = useState<SDSData | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
-  const [progress, setProgress]       = useState(0);
-  const [error, setError]             = useState<string | null>(null);
-  const mainRef                        = useRef<HTMLDivElement>(null);
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const mainRef = useRef<HTMLDivElement>(null);
 
   // Run one-time migrations on startup
   useEffect(() => {
-    const MIGRATION_KEY = "project-may-formula-migration-v2";
-    if (!localStorage.getItem(MIGRATION_KEY)) {
-      // Migrate localStorage → IndexedDB first, then fix formulas
-      migrateFromLocalStorage()
+    // migrateFromLocalStorage() uses the authoritative openDatabase() that
+    // creates the IndexedDB object stores via onupgradeneeded. Always call it
+    // first so the DB is fully set up before any migration touches it.
+    const dbReady = migrateFromLocalStorage();
+
+    const FORMULA_MIGRATION_KEY = "project-may-formula-migration-v2";
+    if (!localStorage.getItem(FORMULA_MIGRATION_KEY)) {
+      dbReady
         .then(() => runFormulaMigration())
         .then((result) => {
           if (result.success) {
-            localStorage.setItem(MIGRATION_KEY, "done");
+            localStorage.setItem(FORMULA_MIGRATION_KEY, "done");
+          }
+        })
+        .catch(() => {});
+    }
+
+    // Strip preparedBy from all existing IndexedDB cache entries
+    const STRIP_PREPARED_BY_KEY = "project-may-strip-preparedby-v1";
+    if (!localStorage.getItem(STRIP_PREPARED_BY_KEY)) {
+      dbReady
+        .then(() => runStripPreparedByMigration())
+        .then((result) => {
+          if (result.success) {
+            localStorage.setItem(STRIP_PREPARED_BY_KEY, "done");
           }
         })
         .catch(() => {});
@@ -51,14 +74,24 @@ export default function Home() {
   // Scroll to results when data loads
   useEffect(() => {
     if (data && !isLoading && mainRef.current) {
-      setTimeout(() => mainRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+      setTimeout(
+        () =>
+          mainRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          }),
+        100,
+      );
     }
   }, [data, isLoading]);
 
   // Reset progress after loading stops
   useEffect(() => {
     if (isLoading) return;
-    const timer = setTimeout(() => { setProgress(0); setLoadingStep(0); }, 500);
+    const timer = setTimeout(() => {
+      setProgress(0);
+      setLoadingStep(0);
+    }, 500);
     return () => clearTimeout(timer);
   }, [isLoading]);
 
@@ -75,7 +108,10 @@ export default function Home() {
     const stepInterval = setInterval(() => {
       setLoadingStep((s) => (s < LOADING_STEPS.length - 1 ? s + 1 : s));
     }, 1200);
-    return () => { clearInterval(progressInterval); clearInterval(stepInterval); };
+    return () => {
+      clearInterval(progressInterval);
+      clearInterval(stepInterval);
+    };
   }, [isLoading]);
 
   const handleSelectTerm = useCallback(async (term: string) => {
@@ -88,7 +124,9 @@ export default function Home() {
     try {
       const cid = await getCIDByName(term);
       if (!cid) {
-        setError(`No compound found for "${term}". Try another spelling or pick a suggestion.`);
+        setError(
+          `No compound found for "${term}". Try another spelling or pick a suggestion.`,
+        );
         setIsLoading(false);
         return;
       }
@@ -103,7 +141,13 @@ export default function Home() {
           setData(cached);
           setProgress(100);
           setTimeout(() => setIsLoading(false), 300);
-          await addSearchHistory({ term, cid, name: cached.identity.name || term, cas: cached.identity.cas, formula: cached.identity.formula });
+          await addSearchHistory({
+            term,
+            cid,
+            name: cached.identity.name || term,
+            cas: cached.identity.cas,
+            formula: cached.identity.formula,
+          });
           return;
         }
       } catch (e) {
@@ -135,7 +179,13 @@ export default function Home() {
 
       try {
         await setCachedSDS(cid, finalResult);
-        await addSearchHistory({ term, cid, name: finalResult.identity.name || term, cas: finalResult.identity.cas, formula: finalResult.identity.formula });
+        await addSearchHistory({
+          term,
+          cid,
+          name: finalResult.identity.name || term,
+          cas: finalResult.identity.cas,
+          formula: finalResult.identity.formula,
+        });
       } catch (e) {
         console.warn("Cache write failed:", e);
       }
@@ -143,21 +193,31 @@ export default function Home() {
       setProgress(100);
       setTimeout(() => setIsLoading(false), 400);
     } catch {
-      setError("A network error occurred. Please check your connection and try again.");
+      setError(
+        "A network error occurred. Please check your connection and try again.",
+      );
       setIsLoading(false);
     }
   }, []);
 
-  const hasContent = isLoading || (!!error && !isLoading) || (!!data && !isLoading);
+  const hasContent =
+    isLoading || (!!error && !isLoading) || (!!data && !isLoading);
 
   return (
     <div className="flex flex-col min-h-screen bg-brand-bg">
       <SiteNav />
 
-      <HeroSection onSelectTerm={handleSelectTerm} isLoading={isLoading} isCentered={!hasContent} />
+      <HeroSection
+        onSelectTerm={handleSelectTerm}
+        isLoading={isLoading}
+        isCentered={!hasContent}
+      />
 
       {hasContent && (
-        <main ref={mainRef} className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pb-20">
+        <main
+          ref={mainRef}
+          className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pb-20"
+        >
           {isLoading && (
             <LoadingState progress={progress} loadingStep={loadingStep} />
           )}
@@ -167,7 +227,13 @@ export default function Home() {
           )}
 
           {data && !isLoading && (
-            <ResultsSection data={data} onClear={() => { setData(null); setError(null); }} />
+            <ResultsSection
+              data={data}
+              onClear={() => {
+                setData(null);
+                setError(null);
+              }}
+            />
           )}
         </main>
       )}
@@ -176,10 +242,18 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/project-may-logo.png" alt="Project May" className="w-5 h-5 object-contain" />
-            <span className="text-sm font-medium text-brand-text">Project May</span>
+            <img
+              src="/project-may-logo.png"
+              alt="Project May"
+              className="w-5 h-5 object-contain"
+            />
+            <span className="text-sm font-medium text-brand-text">
+              Project May
+            </span>
           </div>
-          <p className="text-xs text-brand-text-muted">Data from PubChem · Powered by Gemini AI</p>
+          <p className="text-xs text-brand-text-muted">
+            Data from PubChem · Powered by Gemini AI
+          </p>
         </div>
       </footer>
     </div>

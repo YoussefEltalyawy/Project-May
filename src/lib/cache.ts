@@ -4,11 +4,16 @@ import { SearchHistoryItem } from "./validation/schemas";
 export type { SearchHistoryItem };
 
 const DB_NAME = "project-may-db";
-const DB_VERSION = 2; // Bumped to clear corrupted data
+const DB_VERSION = 3; // Bumped to recover stores missing due to race condition
 
 let db: IDBDatabase | null = null;
 
-function openDatabase(): Promise<IDBDatabase> {
+/**
+ * The single authoritative DB opener — includes onupgradeneeded so stores
+ * are always created. Export this and use it everywhere instead of creating
+ * local openers that lack the upgrade handler.
+ */
+export function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     if (db) {
       resolve(db);
@@ -39,13 +44,17 @@ function openDatabase(): Promise<IDBDatabase> {
 
       // SDS cache store
       if (!database.objectStoreNames.contains("sds_cache")) {
-        const sdsStore = database.createObjectStore("sds_cache", { keyPath: "cid" });
+        const sdsStore = database.createObjectStore("sds_cache", {
+          keyPath: "cid",
+        });
         sdsStore.createIndex("by-timestamp", "timestamp");
       }
 
       // Search history store
       if (!database.objectStoreNames.contains("search_history")) {
-        const historyStore = database.createObjectStore("search_history", { keyPath: "id" });
+        const historyStore = database.createObjectStore("search_history", {
+          keyPath: "id",
+        });
         historyStore.createIndex("by-timestamp", "timestamp");
       }
     };
@@ -53,6 +62,14 @@ function openDatabase(): Promise<IDBDatabase> {
 }
 
 // SDS Cache Functions
+/** Strip preparedBy so it is never persisted or returned from cache. */
+function withoutPreparedBy(data: SDSData): SDSData {
+  const { preparedBy: _omit, ...rest } = data as SDSData & {
+    preparedBy?: unknown;
+  };
+  return rest as SDSData;
+}
+
 export async function getCachedSDS(cid: string): Promise<SDSData | null> {
   try {
     const database = await openDatabase();
@@ -78,7 +95,8 @@ export async function getCachedSDS(cid: string): Promise<SDSData | null> {
           return;
         }
 
-        resolve(entry.data);
+        // Always strip preparedBy — it must be entered fresh each time
+        resolve(withoutPreparedBy(entry.data));
       };
       request.onerror = () => reject(request.error);
     });
@@ -94,9 +112,10 @@ export async function setCachedSDS(cid: string, data: SDSData): Promise<void> {
     return new Promise((resolve, reject) => {
       const tx = database.transaction("sds_cache", "readwrite");
       const store = tx.objectStore("sds_cache");
+      // Strip preparedBy before persisting — it must be entered fresh each time
       const request = store.put({
         cid,
-        data,
+        data: withoutPreparedBy(data),
         timestamp: Date.now(),
       });
 
@@ -109,10 +128,12 @@ export async function setCachedSDS(cid: string, data: SDSData): Promise<void> {
 }
 
 // Search History Functions
-export async function addSearchHistory(item: Omit<SearchHistoryItem, "id" | "timestamp">): Promise<void> {
+export async function addSearchHistory(
+  item: Omit<SearchHistoryItem, "id" | "timestamp">,
+): Promise<void> {
   try {
     const database = await openDatabase();
-    
+
     // Skip if this compound is the same as the most recent search (consecutive duplicates)
     const existing = await getSearchHistory(1);
     if (existing.length > 0 && existing[0].cid === item.cid) {
@@ -148,7 +169,9 @@ export async function addSearchHistory(item: Omit<SearchHistoryItem, "id" | "tim
   }
 }
 
-export async function getSearchHistory(limit = 10): Promise<SearchHistoryItem[]> {
+export async function getSearchHistory(
+  limit = 10,
+): Promise<SearchHistoryItem[]> {
   try {
     const database = await openDatabase();
     return new Promise((resolve, reject) => {
@@ -163,11 +186,12 @@ export async function getSearchHistory(limit = 10): Promise<SearchHistoryItem[]>
         const cursor = request.result;
         if (!cursor || results.length >= limit) {
           // Filter out any invalid entries
-          const validResults = results.filter((r): r is SearchHistoryItem => 
-            r != null && 
-            typeof r === "object" && 
-            typeof r.id === "string" &&
-            typeof r.term === "string"
+          const validResults = results.filter(
+            (r): r is SearchHistoryItem =>
+              r != null &&
+              typeof r === "object" &&
+              typeof r.id === "string" &&
+              typeof r.term === "string",
           );
           resolve(validResults);
           return;
@@ -218,7 +242,9 @@ export async function deleteSearchHistoryItem(id: string): Promise<void> {
 // Legacy localStorage migration
 export async function migrateFromLocalStorage(): Promise<void> {
   try {
-    const keys = Object.keys(localStorage).filter(k => k.startsWith("sds_cache_v3_"));
+    const keys = Object.keys(localStorage).filter((k) =>
+      k.startsWith("sds_cache_v3_"),
+    );
     for (const key of keys) {
       const cid = key.replace("sds_cache_v3_", "");
       const data = localStorage.getItem(key);
