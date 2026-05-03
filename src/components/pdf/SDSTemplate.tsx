@@ -1,21 +1,30 @@
 "use client";
 
 import {
-  Document, Page, Text, View, StyleSheet, Image,
+  Document,
+  Page,
+  Text,
+  View,
+  StyleSheet,
+  Image,
 } from "@react-pdf/renderer";
 import type { SDSData } from "@/lib/pubchem";
 import { getPictogramLabel } from "@/lib/ghsMapping";
 import { GHS_PICTOGRAMS_B64 } from "@/lib/ghsB64";
 import { reorderFormula } from "@/lib/formulaUtils";
-import React from "react";
+import React, { useEffect } from "react";
 import { Font } from "@react-pdf/renderer";
 
 // Register Cairo font for Arabic support (using local variable font)
 Font.register({
   family: "Cairo",
   fonts: [
-    { src: "/fonts/Cairo-VariableFont_slnt,wght.ttf", fontStyle: "normal", fontWeight: "normal" }
-  ]
+    {
+      src: "/fonts/Cairo-VariableFont_slnt,wght.ttf",
+      fontStyle: "normal",
+      fontWeight: "normal",
+    },
+  ],
 });
 
 // Hyphenation callback is still global
@@ -27,12 +36,18 @@ Font.registerHyphenationCallback((word) => [word]);
  */
 const sanitizeText = (text: string): string => {
   if (!text) return "";
-  // Remove zero-width spaces, invisible separators, and complex BiDi markers 
+  // Remove zero-width spaces, invisible separators, and complex BiDi markers
   // that are known to trigger the 'reading id of undefined' crash in react-pdf/textkit
   return text.replace(/[\u200B-\u200D\uFEFF\u200E\u200F\u202A-\u202E]/g, "");
 };
 
-const ChemicalFormulaPdf = ({ formula, style }: { formula: string; style?: any }) => {
+const ChemicalFormulaPdf = ({
+  formula,
+  style,
+}: {
+  formula: string;
+  style?: any;
+}) => {
   if (!formula) return null;
 
   // Reorder from Hill notation to conventional notation
@@ -43,7 +58,10 @@ const ChemicalFormulaPdf = ({ formula, style }: { formula: string; style?: any }
   let lastIndex = 0;
   let match;
   while ((match = regex.exec(reordered)) !== null) {
-    const precedingText = reordered.slice(lastIndex, match.index + match[1].length);
+    const precedingText = reordered.slice(
+      lastIndex,
+      match.index + match[1].length,
+    );
     if (precedingText) items.push({ text: precedingText, sub: false });
     items.push({ text: match[2], sub: true });
     lastIndex = regex.lastIndex;
@@ -53,17 +71,23 @@ const ChemicalFormulaPdf = ({ formula, style }: { formula: string; style?: any }
 
   // Extract lineHeight as it can cause crashes in react-pdf when used with nested Text nodes
   const { lineHeight, ...baseStyle } = style || {};
-  const subStyle = { fontSize: (style?.fontSize || 9) * 0.65, color: style?.color };
+  const subStyle = {
+    fontSize: (style?.fontSize || 9) * 0.65,
+    color: style?.color,
+  };
 
   return (
     <Text style={baseStyle}>
-      {Array.isArray(items) && items.map((item, i) =>
-        item.sub ? (
-          <Text key={i} style={subStyle}>{item.text || ""}</Text>
-        ) : (
-          item.text || ""
-        )
-      )}
+      {Array.isArray(items) &&
+        items.map((item, i) =>
+          item.sub ? (
+            <Text key={i} style={subStyle}>
+              {item.text || ""}
+            </Text>
+          ) : (
+            item.text || ""
+          ),
+        )}
     </Text>
   );
 };
@@ -152,7 +176,13 @@ const S = StyleSheet.create({
     color: C.text,
   },
   row: { flexDirection: "row", marginBottom: 3 },
-  label: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.muted, width: 108, flexShrink: 0 },
+  label: {
+    fontSize: 8,
+    fontFamily: "Helvetica-Bold",
+    color: C.muted,
+    width: 108,
+    flexShrink: 0,
+  },
   value: { fontSize: 9, flex: 1, color: C.text, lineHeight: 1.3 },
   signalRow: {
     flexDirection: "row",
@@ -169,10 +199,21 @@ const S = StyleSheet.create({
     fontSize: 10,
     fontFamily: "Helvetica-Bold",
   },
-  pictogramRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 8 },
+  pictogramRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginBottom: 8,
+  },
   pictogramBox: { alignItems: "center", width: 58 },
   pictogramImg: { width: 50, height: 50 },
-  pictogramLabel: { fontSize: 6.5, color: C.muted, textAlign: "center", marginTop: 2, width: 58 },
+  pictogramLabel: {
+    fontSize: 6.5,
+    color: C.muted,
+    textAlign: "center",
+    marginTop: 2,
+    width: 58,
+  },
   subhead: {
     fontSize: 8,
     fontFamily: "Helvetica-Bold",
@@ -192,7 +233,12 @@ const S = StyleSheet.create({
   bulletText: { fontSize: 9, flex: 1, lineHeight: 1.35, color: C.text },
   propGrid: { flexDirection: "row", flexWrap: "wrap" },
   propCell: { width: "30%", marginBottom: 6, marginRight: 10 },
-  propLabel: { fontSize: 7, fontFamily: "Helvetica-Bold", color: C.muted, marginBottom: 1 },
+  propLabel: {
+    fontSize: 7,
+    fontFamily: "Helvetica-Bold",
+    color: C.muted,
+    marginBottom: 1,
+  },
   propValue: { fontSize: 9, color: C.text },
   footer: {
     position: "absolute",
@@ -248,7 +294,13 @@ const BulletItem = ({ text }: { text: string }) => (
   </View>
 );
 
-const InfoRow = ({ label, value }: { label: string; value: React.ReactNode }) =>
+const InfoRow = ({
+  label,
+  value,
+}: {
+  label: string;
+  value: React.ReactNode;
+}) =>
   value ? (
     <View style={S.row}>
       <Text style={S.label}>{label}</Text>
@@ -264,7 +316,9 @@ const InfoRow = ({ label, value }: { label: string; value: React.ReactNode }) =>
 const TextBlock = ({ items }: { items: string[] }) => {
   if (!items || !Array.isArray(items) || items.length === 0) return null;
   // Limit to 40 items per section to prevent memory issues with massive SDS data
-  const limitedItems = items.slice(0, 40).filter(item => item && typeof item === 'string');
+  const limitedItems = items
+    .slice(0, 40)
+    .filter((item) => item && typeof item === "string");
   return (
     <>
       {limitedItems.map((t, i) => (
@@ -274,8 +328,35 @@ const TextBlock = ({ items }: { items: string[] }) => {
   );
 };
 
+const registerCairoFont = () => {
+  Font.register({
+    family: "Cairo",
+    fonts: [
+      {
+        src: "/fonts/Cairo-VariableFont_slnt,wght.ttf",
+        fontStyle: "normal",
+        fontWeight: "normal",
+      },
+    ],
+  });
+};
+
 export const SDSTemplate = ({ data }: { data: SDSData }) => {
-  const signalColor = (data?.ghs?.signalWord === "Danger") ? C.danger : C.warn;
+  // Re-register the font on mount and whenever data changes.
+  // This works around a known react-pdf / textkit bug where the internal
+  // font registry can be cleared between renders, causing the BiDi reordering
+  // step to crash with "Cannot read properties of undefined (reading 'id')"
+  // when rendering large RTL Arabic paragraphs.
+  // See: https://github.com/diegomura/react-pdf/issues/3050
+  useEffect(() => {
+    registerCairoFont();
+  }, []);
+
+  useEffect(() => {
+    registerCairoFont();
+  }, [data]);
+
+  const signalColor = data?.ghs?.signalWord === "Danger" ? C.danger : C.warn;
 
   const physProps = [
     { label: "Appearance", value: data.physical?.appearance },
@@ -288,15 +369,16 @@ export const SDSTemplate = ({ data }: { data: SDSData }) => {
     { label: "Solubility", value: data.physical?.solubility },
     { label: "pH", value: data.physical?.ph },
     { label: "Auto-ignition temp.", value: data.physical?.autoIgnition },
-  ].filter(p => p.value);
-
+  ].filter((p) => p.value);
 
   return (
     <Document>
       <Page size="A4" style={S.page}>
         <View style={S.hero}>
           <Text style={S.heroKicker}>Safety data sheet · summary</Text>
-          <Text style={S.heroTitle}>{data?.identity?.name || "Chemical Compound"}</Text>
+          <Text style={S.heroTitle}>
+            {data?.identity?.name || "Chemical Compound"}
+          </Text>
 
           {data?.preparedBy && (
             <Text style={[S.heroKicker, { marginTop: 6 }]}>
@@ -309,18 +391,25 @@ export const SDSTemplate = ({ data }: { data: SDSData }) => {
           <View style={S.identityRow}>
             <View style={S.identityBlock}>
               <Text style={S.identityLabel}>Signal</Text>
-              <Text style={S.identityValue}>{data?.ghs?.signalWord || "Warning"}</Text>
+              <Text style={S.identityValue}>
+                {data?.ghs?.signalWord || "Warning"}
+              </Text>
             </View>
             {data?.identity?.formula ? (
               <View style={S.identityBlock}>
                 <Text style={S.identityLabel}>Formula</Text>
-                <ChemicalFormulaPdf formula={data.identity.formula} style={S.identityValue} />
+                <ChemicalFormulaPdf
+                  formula={data.identity.formula}
+                  style={S.identityValue}
+                />
               </View>
             ) : null}
             {data?.identity?.molecularWeight ? (
               <View style={S.identityBlock}>
                 <Text style={S.identityLabel}>Mol. weight</Text>
-                <Text style={S.identityValue}>{data.identity.molecularWeight}</Text>
+                <Text style={S.identityValue}>
+                  {data.identity.molecularWeight}
+                </Text>
               </View>
             ) : null}
           </View>
@@ -330,11 +419,32 @@ export const SDSTemplate = ({ data }: { data: SDSData }) => {
           <View style={S.section}>
             <SectionHeader num="1" title="Identification" />
             <InfoRow label="Product name" value={data?.identity?.name || ""} />
-            <InfoRow label="IUPAC name" value={data?.identity?.iupacName || ""} />
-            <InfoRow label="Formula" value={data?.identity?.formula ? <ChemicalFormulaPdf formula={data.identity.formula} style={S.value} /> : ""} />
-            <InfoRow label="Molecular weight" value={data?.identity?.molecularWeight || ""} />
+            <InfoRow
+              label="IUPAC name"
+              value={data?.identity?.iupacName || ""}
+            />
+            <InfoRow
+              label="Formula"
+              value={
+                data?.identity?.formula ? (
+                  <ChemicalFormulaPdf
+                    formula={data.identity.formula}
+                    style={S.value}
+                  />
+                ) : (
+                  ""
+                )
+              }
+            />
+            <InfoRow
+              label="Molecular weight"
+              value={data?.identity?.molecularWeight || ""}
+            />
             {(data?.identity?.synonyms?.length ?? 0) > 0 ? (
-              <InfoRow label="Synonyms" value={data.identity.synonyms.join("; ")} />
+              <InfoRow
+                label="Synonyms"
+                value={data.identity.synonyms.join("; ")}
+              />
             ) : null}
           </View>
 
@@ -342,31 +452,39 @@ export const SDSTemplate = ({ data }: { data: SDSData }) => {
             <SectionHeader num="2" title="Physical & Chemical Properties" />
             {(physProps?.length ?? 0) > 0 ? (
               <View style={S.propGrid}>
-                {physProps.map((p) => p && p.label && (
-                  <View key={p.label} style={S.propCell}>
-                    <Text style={S.propLabel}>{p.label}</Text>
-                    <Text style={S.propValue}>{p.value || ""}</Text>
-                  </View>
-                ))}
+                {physProps.map(
+                  (p) =>
+                    p &&
+                    p.label && (
+                      <View key={p.label} style={S.propCell}>
+                        <Text style={S.propLabel}>{p.label}</Text>
+                        <Text style={S.propValue}>{p.value || ""}</Text>
+                      </View>
+                    ),
+                )}
               </View>
             ) : null}
           </View>
 
           <View style={S.section}>
             <SectionHeader num="3" title="Hazards Identification" />
-            <View style={[
-              S.signalRow,
-              {
-                backgroundColor: (data?.ghs?.signalWord === "Danger") ? "#fecaca" : "#fed7aa",
-                borderColor: signalColor || C.warn,
-              }
-            ]}>
+            <View
+              style={[
+                S.signalRow,
+                {
+                  backgroundColor:
+                    data?.ghs?.signalWord === "Danger" ? "#fecaca" : "#fed7aa",
+                  borderColor: signalColor || C.warn,
+                },
+              ]}
+            >
               <Text style={[S.signalText, { color: signalColor || C.warn }]}>
                 Signal word: {data?.ghs?.signalWord || "Warning"}
               </Text>
             </View>
 
-            {Array.isArray(data?.ghs?.pictograms) && data.ghs.pictograms.length > 0 ? (
+            {Array.isArray(data?.ghs?.pictograms) &&
+            data.ghs.pictograms.length > 0 ? (
               <View style={S.pictogramRow}>
                 {data.ghs.pictograms.map((code) => {
                   if (!code) return null;
@@ -375,7 +493,9 @@ export const SDSTemplate = ({ data }: { data: SDSData }) => {
                   return (
                     <View key={`pict-${code}`} style={S.pictogramBox}>
                       <Image src={src} style={S.pictogramImg} />
-                      <Text style={S.pictogramLabel}>{getPictogramLabel(code)}</Text>
+                      <Text style={S.pictogramLabel}>
+                        {getPictogramLabel(code)}
+                      </Text>
                     </View>
                   );
                 })}
@@ -397,11 +517,19 @@ export const SDSTemplate = ({ data }: { data: SDSData }) => {
 
           <View style={S.section}>
             <SectionHeader num="6" title="Handling and Storage" />
-            <TextBlock items={[...(data?.handling?.text ?? []), ...(data?.storage?.text ?? [])]} />
+            <TextBlock
+              items={[
+                ...(data?.handling?.text ?? []),
+                ...(data?.storage?.text ?? []),
+              ]}
+            />
           </View>
 
           <View style={S.section}>
-            <SectionHeader num="7" title="Exposure Controls / Personal Protection" />
+            <SectionHeader
+              num="7"
+              title="Exposure Controls / Personal Protection"
+            />
             <TextBlock items={data?.exposure?.text ?? []} />
           </View>
 
@@ -421,24 +549,31 @@ export const SDSTemplate = ({ data }: { data: SDSData }) => {
           </View>
 
           {data?.arabicWarning && String(data.arabicWarning).trim() ? (
-            <View style={[S.arabicWarningBox, { alignItems: 'flex-end' }]}>
-              <Text style={[S.arabicWarningTitle, { marginBottom: 4 }]}>تحذير سلامة</Text>
+            <View style={[S.arabicWarningBox, { alignItems: "flex-end" }]}>
+              <Text style={[S.arabicWarningTitle, { marginBottom: 4 }]}>
+                تحذير سلامة
+              </Text>
               {sanitizeText(String(data.arabicWarning))
-                .split('\n')
-                .filter(line => line.trim())
+                .split("\n")
+                .filter((line) => line.trim())
                 .map((line, i) => (
-                  <Text key={`ar-line-${i}`} style={S.arabicWarningText}>{line}</Text>
-                ))
-              }
+                  <Text key={`ar-line-${i}`} style={S.arabicWarningText}>
+                    {line}
+                  </Text>
+                ))}
             </View>
           ) : null}
         </View>
 
         <View style={S.footer} fixed>
-          <Text style={S.footerText}>Summary for reference · confirm details with your supplier SDS</Text>
+          <Text style={S.footerText}>
+            Summary for reference · confirm details with your supplier SDS
+          </Text>
           <Text
             style={S.pageNum}
-            render={({ pageNumber, totalPages }) => `Page ${pageNumber} / ${totalPages}`}
+            render={({ pageNumber, totalPages }) =>
+              `Page ${pageNumber} / ${totalPages}`
+            }
           />
         </View>
       </Page>
